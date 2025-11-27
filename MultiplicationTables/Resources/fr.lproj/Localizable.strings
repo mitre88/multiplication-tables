@@ -1,0 +1,90 @@
+/* French Localization / Localisation en Français */
+
+/* Main Menu */
+"practice" = "Pratiquer";
+"practice_subtitle" = "Apprends les tables de multiplication";
+"challenge" = "Défi";
+"challenge_subtitle" = "Teste tes compétences";
+"progress" = "Progrès";
+"progress_subtitle" = "Suis tes réalisations";
+"settings" = "Réglages";
+"settings_subtitle" = "Personnalise ton expérience";
+
+/* Table Selector */
+"select_table" = "Sélectionne une Table";
+"choose_table_practice" = "Choisis quelle table pratiquer";
+"completed" = "Terminé";
+"accuracy" = "Précision";
+"streak" = "Série";
+"new" = "Nouveau";
+"unlock_more_tables" = "Débloquer Plus de Tables";
+
+/* Practice */
+"correct" = "Correct !";
+"incorrect" = "Incorrect";
+"correct_answer_is" = "La bonne réponse est";
+"check" = "Vérifier";
+
+/* Results */
+"excellent" = "Excellent !";
+"great_job" = "Bon Travail !";
+"good_effort" = "Bon Effort !";
+"keep_practicing" = "Continue à Pratiquer !";
+"correct_answers" = "Réponses Correctes";
+"time" = "Temps";
+"table_practiced" = "Table Pratiquée";
+"practice_again" = "Pratiquer Encore";
+"back_to_menu" = "Retour au Menu";
+
+/* Challenge */
+"challenge_mode" = "Mode Défi";
+"challenge_description" = "Réponds à autant de questions que possible !";
+"select_difficulty" = "Sélectionne la Difficulté";
+"select_tables" = "Sélectionne les Tables";
+"start_challenge" = "Commencer le Défi";
+"difficulty_easy" = "Facile";
+"difficulty_normal" = "Normal";
+"difficulty_hard" = "Difficile";
+"challenge_complete" = "Défi Terminé !";
+"final_score" = "Score Final";
+"try_again" = "Réessayer";
+
+/* Progress */
+"your_progress" = "Ton Progrès";
+"stars" = "Étoiles";
+"total_questions" = "Questions Totales";
+"best_streak" = "Meilleure Série";
+"tables_mastered" = "Tables Maîtrisées";
+"achievements" = "Réalisations";
+"table_progress" = "Progrès des Tables";
+"no_progress_yet" = "Pas encore de progrès. Commence à pratiquer !";
+"table_x" = "Table";
+"mastered" = "Maîtrisée";
+"attempts" = "tentatives";
+
+/* Achievements */
+"first_steps_title" = "Premiers Pas";
+"first_steps_desc" = "Répondu à 10 questions";
+"perfect_ten_title" = "Dix Parfait";
+"perfect_ten_desc" = "10 correctes d'affilée";
+"master_title" = "Maître";
+"master_desc" = "Toutes les tables de base terminées";
+"speed_demon_title" = "Démon de Vitesse";
+"speed_demon_desc" = "Réponses rapides sur 5 tables";
+"centurion_title" = "Centurion";
+"centurion_desc" = "Atteint la table 100";
+
+/* Settings */
+"language" = "Langue";
+"sound_effects" = "Effets Sonores";
+"background_music" = "Musique de Fond";
+"haptic_feedback" = "Retour Haptique";
+"difficulty" = "Difficulté";
+"max_table_range" = "Plage Maximale de Tables";
+"up_to_table_x" = "Jusqu'à la table";
+"reset_progress" = "Réinitialiser le Progrès";
+"reset_progress_title" = "Réinitialiser le Progrès ?";
+"reset_progress_message" = "Cela supprimera tout ton progrès et tes réalisations. Cela ne peut pas être annulé.";
+"cancel" = "Annuler";
+"reset" = "Réinitialiser";
+"select_language" = "Sélectionner la Langue";

@@ -1,0 +1,90 @@
+/* English Localization */
+
+/* Main Menu */
+"practice" = "Practice";
+"practice_subtitle" = "Learn multiplication tables";
+"challenge" = "Challenge";
+"challenge_subtitle" = "Test your skills";
+"progress" = "Progress";
+"progress_subtitle" = "Track your achievements";
+"settings" = "Settings";
+"settings_subtitle" = "Customize your experience";
+
+/* Table Selector */
+"select_table" = "Select a Table";
+"choose_table_practice" = "Choose which table to practice";
+"completed" = "Completed";
+"accuracy" = "Accuracy";
+"streak" = "Streak";
+"new" = "New";
+"unlock_more_tables" = "Unlock More Tables";
+
+/* Practice */
+"correct" = "Correct!";
+"incorrect" = "Incorrect";
+"correct_answer_is" = "The correct answer is";
+"check" = "Check";
+
+/* Results */
+"excellent" = "Excellent!";
+"great_job" = "Great Job!";
+"good_effort" = "Good Effort!";
+"keep_practicing" = "Keep Practicing!";
+"correct_answers" = "Correct Answers";
+"time" = "Time";
+"table_practiced" = "Table Practiced";
+"practice_again" = "Practice Again";
+"back_to_menu" = "Back to Menu";
+
+/* Challenge */
+"challenge_mode" = "Challenge Mode";
+"challenge_description" = "Answer as many questions as you can!";
+"select_difficulty" = "Select Difficulty";
+"select_tables" = "Select Tables";
+"start_challenge" = "Start Challenge";
+"difficulty_easy" = "Easy";
+"difficulty_normal" = "Normal";
+"difficulty_hard" = "Hard";
+"challenge_complete" = "Challenge Complete!";
+"final_score" = "Final Score";
+"try_again" = "Try Again";
+
+/* Progress */
+"your_progress" = "Your Progress";
+"stars" = "Stars";
+"total_questions" = "Total Questions";
+"best_streak" = "Best Streak";
+"tables_mastered" = "Tables Mastered";
+"achievements" = "Achievements";
+"table_progress" = "Table Progress";
+"no_progress_yet" = "No progress yet. Start practicing!";
+"table_x" = "Table";
+"mastered" = "Mastered";
+"attempts" = "attempts";
+
+/* Achievements */
+"first_steps_title" = "First Steps";
+"first_steps_desc" = "Answered 10 questions";
+"perfect_ten_title" = "Perfect Ten";
+"perfect_ten_desc" = "10 correct in a row";
+"master_title" = "Master";
+"master_desc" = "Completed all basic tables";
+"speed_demon_title" = "Speed Demon";
+"speed_demon_desc" = "Fast answers on 5 tables";
+"centurion_title" = "Centurion";
+"centurion_desc" = "Reached table 100";
+
+/* Settings */
+"language" = "Language";
+"sound_effects" = "Sound Effects";
+"background_music" = "Background Music";
+"haptic_feedback" = "Haptic Feedback";
+"difficulty" = "Difficulty";
+"max_table_range" = "Maximum Table Range";
+"up_to_table_x" = "Up to table";
+"reset_progress" = "Reset Progress";
+"reset_progress_title" = "Reset Progress?";
+"reset_progress_message" = "This will delete all your progress and achievements. This cannot be undone.";
+"cancel" = "Cancel";
+"reset" = "Reset";
+"select_language" = "Select Language";

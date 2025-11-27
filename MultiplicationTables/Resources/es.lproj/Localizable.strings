@@ -1,0 +1,90 @@
+/* Spanish Localization / Localización en Español */
+
+/* Main Menu */
+"practice" = "Practicar";
+"practice_subtitle" = "Aprende las tablas de multiplicar";
+"challenge" = "Desafío";
+"challenge_subtitle" = "Pon a prueba tus habilidades";
+"progress" = "Progreso";
+"progress_subtitle" = "Sigue tus logros";
+"settings" = "Configuración";
+"settings_subtitle" = "Personaliza tu experiencia";
+
+/* Table Selector */
+"select_table" = "Selecciona una Tabla";
+"choose_table_practice" = "Elige qué tabla practicar";
+"completed" = "Completado";
+"accuracy" = "Precisión";
+"streak" = "Racha";
+"new" = "Nueva";
+"unlock_more_tables" = "Desbloquear Más Tablas";
+
+/* Practice */
+"correct" = "¡Correcto!";
+"incorrect" = "Incorrecto";
+"correct_answer_is" = "La respuesta correcta es";
+"check" = "Verificar";
+
+/* Results */
+"excellent" = "¡Excelente!";
+"great_job" = "¡Gran Trabajo!";
+"good_effort" = "¡Buen Esfuerzo!";
+"keep_practicing" = "¡Sigue Practicando!";
+"correct_answers" = "Respuestas Correctas";
+"time" = "Tiempo";
+"table_practiced" = "Tabla Practicada";
+"practice_again" = "Practicar de Nuevo";
+"back_to_menu" = "Volver al Menú";
+
+/* Challenge */
+"challenge_mode" = "Modo Desafío";
+"challenge_description" = "¡Responde tantas preguntas como puedas!";
+"select_difficulty" = "Selecciona Dificultad";
+"select_tables" = "Selecciona Tablas";
+"start_challenge" = "Comenzar Desafío";
+"difficulty_easy" = "Fácil";
+"difficulty_normal" = "Normal";
+"difficulty_hard" = "Difícil";
+"challenge_complete" = "¡Desafío Completo!";
+"final_score" = "Puntuación Final";
+"try_again" = "Intentar de Nuevo";
+
+/* Progress */
+"your_progress" = "Tu Progreso";
+"stars" = "Estrellas";
+"total_questions" = "Preguntas Totales";
+"best_streak" = "Mejor Racha";
+"tables_mastered" = "Tablas Dominadas";
+"achievements" = "Logros";
+"table_progress" = "Progreso de Tablas";
+"no_progress_yet" = "Sin progreso aún. ¡Empieza a practicar!";
+"table_x" = "Tabla";
+"mastered" = "Dominada";
+"attempts" = "intentos";
+
+/* Achievements */
+"first_steps_title" = "Primeros Pasos";
+"first_steps_desc" = "Respondiste 10 preguntas";
+"perfect_ten_title" = "Diez Perfectos";
+"perfect_ten_desc" = "10 correctas seguidas";
+"master_title" = "Maestro";
+"master_desc" = "Completaste todas las tablas básicas";
+"speed_demon_title" = "Demonio de Velocidad";
+"speed_demon_desc" = "Respuestas rápidas en 5 tablas";
+"centurion_title" = "Centurión";
+"centurion_desc" = "Llegaste a la tabla 100";
+
+/* Settings */
+"language" = "Idioma";
+"sound_effects" = "Efectos de Sonido";
+"background_music" = "Música de Fondo";
+"haptic_feedback" = "Vibración Táctil";
+"difficulty" = "Dificultad";
+"max_table_range" = "Rango Máximo de Tablas";
+"up_to_table_x" = "Hasta la tabla";
+"reset_progress" = "Reiniciar Progreso";
+"reset_progress_title" = "¿Reiniciar Progreso?";
+"reset_progress_message" = "Esto eliminará todo tu progreso y logros. No se puede deshacer.";
+"cancel" = "Cancelar";
+"reset" = "Reiniciar";
+"select_language" = "Seleccionar Idioma";
