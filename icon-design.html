@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multiplication Masters - App Icon Design</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 40px;
+            background: #f0f0f0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .instructions {
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #FF6B9D;
+            margin-top: 0;
+        }
+        h2 {
+            color: #6E8EFB;
+        }
+        .icon-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+        #appIcon {
+            border-radius: 227px; /* iOS icon corner radius for 1024px */
+            overflow: visible;
+        }
+        .size-info {
+            text-align: center;
+            color: #666;
+            margin-top: 10px;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: 'Monaco', monospace;
+        }
+        .step {
+            margin: 15px 0;
+            padding-left: 10px;
+            border-left: 3px solid #FF6B9D;
+        }
+    </style>
+</head>
+<body>
+    <div class="instructions">
+        <h1>📱 Multiplication Masters - Icon Design</h1>
+
+        <h2>Concepto del Diseño</h2>
+        <p>El ícono representa una app educativa y divertida para aprender las tablas de multiplicar:</p>
+        <ul>
+            <li>🎨 <strong>Gradiente vibrante</strong>: De rosa a naranja (del tema de la app)</li>
+            <li>✖️ <strong>Símbolo de multiplicación</strong>: El elemento central</li>
+            <li>⭐ <strong>Estrella</strong>: Representa logros y gamificación</li>
+            <li>🎯 <strong>Diseño limpio</strong>: Inspirado en el estilo "liquid glass" de iOS 26</li>
+        </ul>
+
+        <h2>📋 Instrucciones para Crear el Ícono</h2>
+
+        <div class="step">
+            <h3>Opción 1: Usar el diseño de abajo</h3>
+            <ol>
+                <li>Abre este archivo en un navegador</li>
+                <li>Haz clic derecho en el ícono de abajo</li>
+                <li>Selecciona "Inspeccionar elemento"</li>
+                <li>Usa la herramienta de captura de pantalla con zoom al 100%</li>
+                <li>O usa una herramienta como <code>html2canvas</code> para exportar</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Opción 2: Usar IA para generar (Recomendado)</h3>
+            <ol>
+                <li>Ve a <strong>DALL-E, Midjourney, o Claude</strong></li>
+                <li>Usa este prompt:<br>
+                    <code>"Create an iOS app icon for a kids multiplication learning app called 'Multiplication Masters'. Modern gradient from pink (#FF6B9D) to orange (#FFB347), featuring a large white multiplication symbol (×) and a small star. Clean, playful design with iOS liquid glass effect. 1024x1024px, rounded corners."</code>
+                </li>
+                <li>Ajusta hasta que te guste</li>
+                <li>Descarga como PNG de 1024x1024px</li>
+            </ol>
+        </div>
+
+        <div class="step">
+            <h3>Opción 3: Usar Figma/Canva</h3>
+            <ol>
+                <li>Crea un lienzo de <strong>1024x1024px</strong></li>
+                <li>Aplica un gradiente de #FF6B9D a #FFB347</li>
+                <li>Agrega un símbolo ✖️ grande en blanco (usando SF Pro Display Bold)</li>
+                <li>Agrega una estrella ⭐ pequeña en la esquina</li>
+                <li>Exporta como PNG de 1024x1024px</li>
+            </ol>
+        </div>
+
+        <h2>📦 Cómo Instalar el Ícono</h2>
+        <ol>
+            <li>Guarda tu ícono final como <code>AppIcon.png</code></li>
+            <li>Cópialo a: <code>MultiplicationTables/Assets.xcassets/AppIcon.appiconset/</code></li>
+            <li>Reemplaza el archivo existente</li>
+            <li>Abre Xcode y verifica que se vea bien</li>
+        </ol>
+    </div>
+
+    <div class="icon-container">
+        <svg id="appIcon" width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+            <!-- Background with gradient -->
+            <defs>
+                <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#FF6B9D;stop-opacity:1" />
+                    <stop offset="50%" style="stop-color:#FF8E8E;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#FFB347;stop-opacity:1" />
+                </linearGradient>
+
+                <!-- Shadow filter for depth -->
+                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur in="SourceAlpha" stdDeviation="8"/>
+                    <feOffset dx="0" dy="4" result="offsetblur"/>
+                    <feComponentTransfer>
+                        <feFuncA type="linear" slope="0.3"/>
+                    </feComponentTransfer>
+                    <feMerge>
+                        <feMergeNode/>
+                        <feMergeNode in="SourceGraphic"/>
+                    </feMerge>
+                </filter>
+
+                <!-- Inner glow for liquid glass effect -->
+                <radialGradient id="glassGlow" cx="30%" cy="30%">
+                    <stop offset="0%" style="stop-color:white;stop-opacity:0.3" />
+                    <stop offset="100%" style="stop-color:white;stop-opacity:0" />
+                </radialGradient>
+            </defs>
+
+            <!-- Rounded rectangle background -->
+            <rect width="1024" height="1024" rx="227" fill="url(#bgGradient)"/>
+
+            <!-- Glass effect overlay -->
+            <rect width="1024" height="1024" rx="227" fill="url(#glassGlow)"/>
+
+            <!-- Multiplication symbol (×) -->
+            <g filter="url(#shadow)">
+                <text x="512" y="620"
+                      font-family="SF Pro Display, -apple-system, sans-serif"
+                      font-size="480"
+                      font-weight="bold"
+                      fill="white"
+                      text-anchor="middle"
+                      opacity="0.95">×</text>
+            </g>
+
+            <!-- Star for achievement/gamification -->
+            <g filter="url(#shadow)" transform="translate(780, 180)">
+                <path d="M 0,-40 L 12,-12 L 42,-12 L 18,8 L 28,38 L 0,18 L -28,38 L -18,8 L -42,-12 L -12,-12 Z"
+                      fill="white"
+                      opacity="0.9"/>
+            </g>
+
+            <!-- Subtle numbers pattern in background -->
+            <g opacity="0.08" fill="white" font-family="SF Pro Display, sans-serif" font-size="80" font-weight="300">
+                <text x="150" y="200">2×3</text>
+                <text x="780" y="380">5×7</text>
+                <text x="120" y="880">9×4</text>
+                <text x="800" y="920">6×8</text>
+            </g>
+        </svg>
+    </div>
+
+    <div class="size-info">
+        Tamaño: 1024 × 1024 px | Radio de esquinas: 227px (22.16%)
+    </div>
+
+    <script>
+        // Optional: Add download functionality
+        function downloadSVG() {
+            const svg = document.getElementById('appIcon');
+            const svgData = new XMLSerializer().serializeToString(svg);
+            const svgBlob = new Blob([svgData], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(svgBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'AppIcon.svg';
+            link.click();
+        }
+    </script>
+</body>
+</html>
