@@ -11,6 +11,8 @@ struct ResultsView: View {
     let onRestart: () -> Void
     let onExit: () -> Void
 
+    @EnvironmentObject var appState: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var showConfetti = false
     @State private var scale: CGFloat = 0.5
     @State private var rotation: Double = -180
@@ -25,17 +27,17 @@ struct ResultsView: View {
 
     private var message: String {
         let accuracy = session.accuracy
-        if accuracy >= 90 { return NSLocalizedString("excellent", comment: "") }
-        if accuracy >= 70 { return NSLocalizedString("great_job", comment: "") }
-        if accuracy >= 50 { return NSLocalizedString("good_effort", comment: "") }
-        return NSLocalizedString("keep_practicing", comment: "")
+        if accuracy >= 90 { return appState.localizedString("excellent", comment: "") }
+        if accuracy >= 70 { return appState.localizedString("great_job", comment: "") }
+        if accuracy >= 50 { return appState.localizedString("good_effort", comment: "") }
+        return appState.localizedString("keep_practicing", comment: "")
     }
 
     var body: some View {
         ZStack {
-            AnimatedGradientBackground()
+            AppBackground()
 
-            if showConfetti && stars >= 2 {
+            if showConfetti && stars >= 2 && !reduceMotion {
                 ConfettiView()
             }
 
@@ -53,7 +55,7 @@ struct ResultsView: View {
 
                         Text(message)
                             .font(.system(size: 36, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppPalette.primary)
                             .multilineTextAlignment(.center)
 
                         // Stars
@@ -61,50 +63,55 @@ struct ResultsView: View {
                             ForEach(0..<3, id: \.self) { index in
                                 Image(systemName: index < stars ? "star.fill" : "star")
                                     .font(.system(size: 40))
-                                    .foregroundColor(.yellow)
-                                    .shadow(color: .black.opacity(0.2), radius: 5)
+                                    .foregroundColor(AppPalette.warning)
                             }
                         }
                     }
                     .padding(.vertical)
 
-                    // Stats card
                     VStack(spacing: 25) {
                         StatRow(
                             icon: "checkmark.circle.fill",
                             label: "correct_answers",
                             value: "\(session.correctCount)/\(session.questions.count)",
-                            color: Color(hex: "4ECDC4")
+                            color: AppPalette.secondary,
+                            appState: appState
                         )
 
                         StatRow(
                             icon: "percent",
                             label: "accuracy",
                             value: String(format: "%.0f%%", session.accuracy),
-                            color: Color(hex: "FFB347")
+                            color: AppPalette.warning,
+                            appState: appState
                         )
 
                         StatRow(
                             icon: "clock.fill",
                             label: "time",
                             value: formatTime(session.totalTime),
-                            color: Color(hex: "6E8EFB")
+                            color: AppPalette.info,
+                            appState: appState
                         )
 
                         StatRow(
                             icon: "multiply.circle.fill",
                             label: "table_practiced",
                             value: "\(tableNumber)",
-                            color: Color(hex: "FF6B9D")
+                            color: AppPalette.primary,
+                            appState: appState
                         )
                     }
-                    .padding(30)
+                    .padding(32)
                     .background(
-                        RoundedRectangle(cornerRadius: 30)
-                            .fill(.ultraThinMaterial)
-                            .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(AppPalette.surface)
                     )
-                    .padding(.horizontal)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(AppPalette.border, lineWidth: 1)
+                    )
+                    .padding(.horizontal, 24)
 
                     // Action buttons
                     VStack(spacing: 15) {
@@ -112,42 +119,28 @@ struct ResultsView: View {
                             HStack {
                                 Image(systemName: "arrow.clockwise")
                                     .font(.system(size: 20, weight: .bold))
-                                Text("practice_again")
+                                Text(appState.localizedString("practice_again", comment: ""))
                                     .font(.system(size: 20, weight: .bold, design: .rounded))
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(hex: "FF6B9D"), Color(hex: "FF8E8E")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .background(AppPalette.primary)
                             .clipShape(Capsule())
-                            .shadow(color: Color(hex: "FF6B9D").opacity(0.5), radius: 10, y: 5)
                         }
 
                         Button(action: onExit) {
                             HStack {
                                 Image(systemName: "house.fill")
                                     .font(.system(size: 20, weight: .bold))
-                                Text("back_to_menu")
+                                Text(appState.localizedString("back_to_menu", comment: ""))
                                     .font(.system(size: 20, weight: .bold, design: .rounded))
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(hex: "6E8EFB"), Color(hex: "A371F7")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .background(AppPalette.info)
                             .clipShape(Capsule())
-                            .shadow(color: Color(hex: "6E8EFB").opacity(0.5), radius: 10, y: 5)
                         }
                     }
                     .padding(.horizontal)
@@ -163,6 +156,12 @@ struct ResultsView: View {
     }
 
     private func startAnimations() {
+        if reduceMotion {
+            scale = 1.0
+            rotation = 0
+            return
+        }
+
         withAnimation(.spring(response: 0.6, dampingFraction: 0.6)) {
             scale = 1.0
             rotation = 0
@@ -188,22 +187,23 @@ struct StatRow: View {
     let label: String
     let value: String
     let color: Color
+    let appState: AppState
 
     var body: some View {
         HStack(spacing: 20) {
             Image(systemName: icon)
-                .font(.system(size: 28))
+                .font(.system(size: 32, weight: .semibold))
                 .foregroundColor(color)
-                .frame(width: 40)
+                .frame(width: 48)
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(NSLocalizedString(label, comment: ""))
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.8))
+            VStack(alignment: .leading, spacing: 6) {
+                Text(appState.localizedString(label, comment: ""))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppPalette.textMuted)
 
                 Text(value)
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.system(size: 26, weight: .black, design: .rounded))
+                    .foregroundColor(AppPalette.text)
             }
 
             Spacer()
@@ -231,12 +231,12 @@ struct ConfettiPiece: View {
     @State private var opacity: Double = 1
 
     private let colors: [Color] = [
-        Color(hex: "FF6B9D"),
-        Color(hex: "FFB347"),
-        Color(hex: "4ECDC4"),
-        Color(hex: "C371F4"),
-        Color(hex: "FFE66D"),
-        Color(hex: "6E8EFB")
+        AppPalette.primary,
+        AppPalette.warning,
+        AppPalette.secondary,
+        AppPalette.info,
+        AppPalette.accent,
+        AppPalette.tableColors.first ?? AppPalette.primary
     ]
 
     private let startX = CGFloat.random(in: -200...200)

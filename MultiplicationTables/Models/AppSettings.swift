@@ -6,7 +6,7 @@
 import Foundation
 import SwiftUI
 
-struct AppSettings: Codable {
+struct AppSettings: Codable, Equatable {
     var soundEnabled: Bool = true
     var musicEnabled: Bool = true
     var hapticEnabled: Bool = true
@@ -20,11 +20,11 @@ struct AppSettings: Codable {
         case normal
         case hard
 
-        var displayName: LocalizedStringKey {
+        func displayName(appState: AppState) -> String {
             switch self {
-            case .easy: return "difficulty_easy"
-            case .normal: return "difficulty_normal"
-            case .hard: return "difficulty_hard"
+            case .easy: return appState.localizedString("difficulty_easy", comment: "")
+            case .normal: return appState.localizedString("difficulty_normal", comment: "")
+            case .hard: return appState.localizedString("difficulty_hard", comment: "")
             }
         }
 

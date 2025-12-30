@@ -12,46 +12,46 @@ struct SettingsView: View {
 
     var body: some View {
         ZStack {
-            AnimatedGradientBackground()
+            AppBackground()
 
             ScrollView {
                 VStack(spacing: 25) {
-                    // Header
-                    VStack(spacing: 15) {
-                        Text("⚙️")
-                            .font(.system(size: 80))
+                        // Header
+                        VStack(spacing: 15) {
+                            Text("⚙️")
+                                .font(.system(size: 80))
 
-                        Text("settings")
-                            .font(.system(size: 36, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                    .padding(.top, 20)
+                            Text(appState.localizedString("settings", comment: ""))
+                                .font(.system(size: 36, weight: .black, design: .rounded))
+                                .foregroundColor(AppPalette.primary)
+                        }
+                        .padding(.top, 20)
 
-                    // Settings sections
-                    VStack(spacing: 20) {
+                        // Settings sections
+                        VStack(spacing: 20) {
                         // Language
                         SettingsCard {
                             Button(action: { showLanguageSheet = true }) {
                                 HStack {
                                     Image(systemName: "globe")
                                         .font(.system(size: 24))
-                                        .foregroundColor(Color(hex: "6E8EFB"))
+                                        .foregroundColor(AppPalette.info)
                                         .frame(width: 40)
 
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("language")
+                                        Text(appState.localizedString("language", comment: ""))
                                             .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(AppPalette.text)
 
                                         Text(appState.currentLanguage.displayName)
                                             .font(.system(size: 14, weight: .medium, design: .rounded))
-                                            .foregroundColor(.white.opacity(0.7))
+                                            .foregroundColor(AppPalette.textMuted)
                                     }
 
                                     Spacer()
 
                                     Image(systemName: "chevron.right")
-                                        .foregroundColor(.white.opacity(0.5))
+                                        .foregroundColor(AppPalette.textMuted)
                                 }
                             }
                         }
@@ -63,27 +63,27 @@ struct SettingsView: View {
                                     icon: "speaker.wave.3.fill",
                                     title: "sound_effects",
                                     isOn: $appState.settings.soundEnabled,
-                                    color: Color(hex: "FFB347")
+                                    color: AppPalette.warning
                                 )
 
                                 Divider()
-                                    .background(Color.white.opacity(0.2))
+                                    .background(AppPalette.border)
 
                                 SettingsToggle(
                                     icon: "music.note",
                                     title: "background_music",
                                     isOn: $appState.settings.musicEnabled,
-                                    color: Color(hex: "FF6B9D")
+                                    color: AppPalette.primary
                                 )
 
                                 Divider()
-                                    .background(Color.white.opacity(0.2))
+                                    .background(AppPalette.border)
 
                                 SettingsToggle(
                                     icon: "hand.tap.fill",
                                     title: "haptic_feedback",
                                     isOn: $appState.settings.hapticEnabled,
-                                    color: Color(hex: "C371F4")
+                                    color: AppPalette.info
                                 )
                             }
                         }
@@ -94,17 +94,17 @@ struct SettingsView: View {
                                 HStack {
                                     Image(systemName: "gauge")
                                         .font(.system(size: 24))
-                                        .foregroundColor(Color(hex: "4ECDC4"))
+                                        .foregroundColor(AppPalette.secondary)
                                         .frame(width: 40)
 
-                                    Text("difficulty")
+                                    Text(appState.localizedString("difficulty", comment: ""))
                                         .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(AppPalette.text)
                                 }
 
                                 Picker("", selection: $appState.settings.difficulty) {
                                     ForEach(AppSettings.Difficulty.allCases, id: \.self) { difficulty in
-                                        Text(difficulty.displayName)
+                                        Text(difficulty.displayName(appState: appState))
                                             .tag(difficulty)
                                     }
                                 }
@@ -118,17 +118,17 @@ struct SettingsView: View {
                                 HStack {
                                     Image(systemName: "number.square.fill")
                                         .font(.system(size: 24))
-                                        .foregroundColor(Color(hex: "98D8C8"))
+                                        .foregroundColor(AppPalette.secondary)
                                         .frame(width: 40)
 
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("max_table_range")
+                                        Text(appState.localizedString("max_table_range", comment: ""))
                                             .font(.system(size: 18, weight: .semibold, design: .rounded))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(AppPalette.text)
 
-                                        Text("up_to_table_x \(appState.settings.maxTableNumber)")
+                                        Text(appState.localizedString("up_to_table_x", comment: "") + " \(appState.settings.maxTableNumber)")
                                             .font(.system(size: 14, weight: .medium, design: .rounded))
-                                            .foregroundColor(.white.opacity(0.7))
+                                            .foregroundColor(AppPalette.textMuted)
                                     }
                                 }
 
@@ -140,57 +140,57 @@ struct SettingsView: View {
                                     in: 10...100,
                                     step: 10
                                 )
-                                .tint(Color(hex: "98D8C8"))
+                                .tint(AppPalette.secondary)
                             }
                         }
 
-                        // Reset progress
                         Button(action: { showResetAlert = true }) {
-                            HStack {
+                            HStack(spacing: 12) {
                                 Image(systemName: "arrow.counterclockwise.circle.fill")
-                                    .font(.system(size: 24))
-                                Text("reset_progress")
-                                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                                    .font(.system(size: 26, weight: .semibold))
+                                Text(appState.localizedString("reset_progress", comment: ""))
+                                    .font(.system(size: 20, weight: .bold, design: .rounded))
                             }
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 18)
-                            .background(
-                                LinearGradient(
-                                    colors: [Color(hex: "FF6B6B"), Color(hex: "FF8E8E")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
+                            .padding(.vertical, 20)
+                            .background(AppPalette.primary)
                             .clipShape(RoundedRectangle(cornerRadius: 20))
-                            .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
 
                     // App info
-                    VStack(spacing: 8) {
-                        Text("Multiplication Masters")
+                VStack(spacing: 8) {
+                        Text(appState.localizedString("app_name_full", comment: "App name"))
                             .font(.system(size: 16, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(AppPalette.textMuted)
 
-                        Text("Version 1.0.0")
+                        Text(appState.localizedString("version", comment: "") + " 1.0.0")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(AppPalette.textMuted)
+
+                        Text(appState.localizedString("app_dedication", comment: "App dedication"))
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundColor(AppPalette.textMuted)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 30)
+                            .padding(.top, 15)
                     }
                     .padding(.top, 20)
                 }
+                .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 60 : 0)
                 .padding(.bottom, 30)
             }
         }
-        .alert("reset_progress_title", isPresented: $showResetAlert) {
-            Button("cancel", role: .cancel) { }
-            Button("reset", role: .destructive) {
+        .alert(Text(appState.localizedString("reset_progress_title", comment: "")), isPresented: $showResetAlert) {
+            Button(appState.localizedString("cancel", comment: ""), role: .cancel) { }
+            Button(appState.localizedString("reset", comment: ""), role: .destructive) {
                 appState.userProgress = UserProgress()
                 appState.userProgress.save()
             }
         } message: {
-            Text("reset_progress_message")
+            Text(appState.localizedString("reset_progress_message", comment: ""))
         }
         .sheet(isPresented: $showLanguageSheet) {
             LanguageSelectorSheet()
@@ -211,11 +211,14 @@ struct SettingsCard<Content: View>: View {
 
     var body: some View {
         content
-            .padding(20)
+            .padding(24)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.2), radius: 15, y: 8)
+                    .fill(AppPalette.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(AppPalette.border, lineWidth: 1)
             )
     }
 }
@@ -226,17 +229,18 @@ struct SettingsToggle: View {
     let title: String
     @Binding var isOn: Bool
     let color: Color
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .font(.system(size: 24))
+                .font(.system(size: 26, weight: .semibold))
                 .foregroundColor(color)
-                .frame(width: 40)
+                .frame(width: 44)
 
-            Text(NSLocalizedString(title, comment: ""))
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
+            Text(appState.localizedString(title, comment: ""))
+                .font(.system(size: 19, weight: .bold, design: .rounded))
+                .foregroundColor(AppPalette.text)
 
             Spacer()
 
@@ -253,16 +257,8 @@ struct LanguageSelectorSheet: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(hex: "FF6B9D"),
-                    Color(hex: "C371F4"),
-                    Color(hex: "6E8EFB")
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            AppPalette.background
+                .ignoresSafeArea()
 
             VStack(spacing: 30) {
                 // Header
@@ -270,9 +266,9 @@ struct LanguageSelectorSheet: View {
                     Text("🌍")
                         .font(.system(size: 70))
 
-                    Text("select_language")
+                    Text(appState.localizedString("select_language", comment: ""))
                         .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppPalette.text)
                 }
                 .padding(.top, 40)
 
@@ -304,32 +300,34 @@ struct LanguageOption: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 20) {
+            HStack(spacing: 22) {
                 Text(language.flag)
-                    .font(.system(size: 40))
+                    .font(.system(size: 44))
 
                 Text(language.displayName)
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(isSelected ? AppPalette.text : AppPalette.textMuted)
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundColor(Color(hex: "4ECDC4"))
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundColor(AppPalette.secondary)
                 }
             }
-            .padding(20)
+            .padding(24)
             .background(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(isSelected ? Color.white.opacity(0.3) : Color.white.opacity(0.15))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white, lineWidth: isSelected ? 3 : 0)
-                    )
+                    .fill(isSelected ? AppPalette.surface : AppPalette.surfaceAlt)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isSelected ? AppPalette.secondary : AppPalette.border, lineWidth: isSelected ? 2 : 1)
+            )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
 

@@ -7,73 +7,83 @@ import SwiftUI
 
 struct MainMenuView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var selectedView: MenuOption? = nil
     @State private var showLanguageSelector = false
     @State private var animateButtons = false
 
+    var localizedText: LocalizedText {
+        LocalizedText(appState: appState)
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
-                // Animated gradient background
-                AnimatedGradientBackground()
+                AppBackground()
 
                 ScrollView {
-                    VStack(spacing: 25) {
-                        // Header with logo and stars
-                        HeaderView(stars: appState.userProgress.stars)
-                            .padding(.top, 20)
+                    VStack(spacing: 24) {
+                            // Header with logo
+                            HeaderView(stars: appState.userProgress.stars)
+                                .padding(.top, 16)
 
-                        // Language selector
-                        LanguageSelectorButton(showLanguageSelector: $showLanguageSelector)
-                            .padding(.horizontal)
+                            Text(appState.localizedString("app_tagline", comment: "App tagline"))
+                                .font(.system(size: 14, weight: .medium, design: .rounded))
+                                .foregroundColor(AppPalette.textMuted)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
 
-                        // Menu buttons
-                        VStack(spacing: 20) {
-                            MenuButton(
-                                title: LocalizedText.practice,
-                                subtitle: LocalizedText.practiceSubtitle,
-                                icon: "pencil.and.list.clipboard",
-                                gradient: [Color(hex: "FF6B9D"), Color(hex: "FF8E8E")],
-                                delay: 0
-                            ) {
-                                selectedView = .practice
+                            // Language selector
+                            LanguageSelectorButton(showLanguageSelector: $showLanguageSelector)
+                                .padding(.horizontal, 20)
+
+                            VStack(spacing: 16) {
+                                MenuButton(
+                                    title: localizedText.practice,
+                                    subtitle: localizedText.practiceSubtitle,
+                                    icon: "pencil.and.list.clipboard",
+                                    accentColor: AppPalette.primary,
+                                    delay: 0
+                                ) {
+                                    selectedView = .practice
+                                }
+
+                                MenuButton(
+                                    title: localizedText.challenge,
+                                    subtitle: localizedText.challengeSubtitle,
+                                    icon: "flame.fill",
+                                    accentColor: AppPalette.warning,
+                                    delay: 0.08
+                                ) {
+                                    selectedView = .challenge
+                                }
+
+                                MenuButton(
+                                    title: localizedText.progress,
+                                    subtitle: localizedText.progressSubtitle,
+                                    icon: "chart.bar.fill",
+                                    accentColor: AppPalette.secondary,
+                                    delay: 0.16
+                                ) {
+                                    selectedView = .progress
+                                }
+
+                                MenuButton(
+                                    title: localizedText.settings,
+                                    subtitle: localizedText.settingsSubtitle,
+                                    icon: "gearshape.fill",
+                                    accentColor: AppPalette.info,
+                                    delay: 0.24
+                                ) {
+                                    selectedView = .settings
+                                }
                             }
-
-                            MenuButton(
-                                title: LocalizedText.challenge,
-                                subtitle: LocalizedText.challengeSubtitle,
-                                icon: "flame.fill",
-                                gradient: [Color(hex: "FFB347"), Color(hex: "FF6B9D")],
-                                delay: 0.1
-                            ) {
-                                selectedView = .challenge
-                            }
-
-                            MenuButton(
-                                title: LocalizedText.progress,
-                                subtitle: LocalizedText.progressSubtitle,
-                                icon: "chart.bar.fill",
-                                gradient: [Color(hex: "6E8EFB"), Color(hex: "A371F7")],
-                                delay: 0.2
-                            ) {
-                                selectedView = .progress
-                            }
-
-                            MenuButton(
-                                title: LocalizedText.settings,
-                                subtitle: LocalizedText.settingsSubtitle,
-                                icon: "gearshape.fill",
-                                gradient: [Color(hex: "4ECDC4"), Color(hex: "44A08D")],
-                                delay: 0.3
-                            ) {
-                                selectedView = .settings
-                            }
-                        }
-                        .padding(.horizontal)
-                        .offset(y: animateButtons ? 0 : 50)
-                        .opacity(animateButtons ? 1 : 0)
+                            .padding(.horizontal, 20)
+                            .offset(y: animateButtons ? 0 : 40)
+                            .opacity(animateButtons ? 1 : 0)
                     }
-                    .padding(.bottom, 30)
+                    .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 60 : 0)
+                    .padding(.bottom, 32)
                 }
             }
             .navigationDestination(item: $selectedView) { option in
@@ -84,8 +94,12 @@ struct MainMenuView: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+            if reduceMotion {
                 animateButtons = true
+            } else {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.75)) {
+                    animateButtons = true
+                }
             }
         }
     }
@@ -96,7 +110,7 @@ struct MainMenuView: View {
         case .practice:
             TableSelectorView()
         case .challenge:
-            ChallengeView()
+            ChallengeView(appState: appState)
         case .progress:
             ProgressView()
         case .settings:
@@ -122,42 +136,43 @@ enum MenuOption: Identifiable {
 // MARK: - Header View
 struct HeaderView: View {
     let stars: Int
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
-        VStack(spacing: 15) {
-            // Logo
-            HStack(spacing: 5) {
-                Text("✖️")
-                    .font(.system(size: 50))
+        VStack(spacing: 16) {
+            // Logo with rotation
+            HStack(spacing: 8) {
+                Text("×")
+                    .font(.system(size: 56, weight: .black, design: .rounded))
+                    .foregroundColor(AppPalette.primary)
 
-                VStack(alignment: .leading, spacing: 0) {
-                    Text("Multiplication")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                    Text("Masters")
-                        .font(.system(size: 28, weight: .black, design: .rounded))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color(hex: "FF6B9D"), Color(hex: "C371F4")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(appState.localizedString("app_name_line1", comment: "App name line 1"))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppPalette.text)
+                    Text(appState.localizedString("app_name_line2", comment: "App name line 2"))
+                        .font(.system(size: 30, weight: .black, design: .rounded))
+                        .foregroundColor(AppPalette.primary)
                 }
             }
 
-            // Stars display
-            HStack(spacing: 8) {
-                Text("⭐")
+            HStack(spacing: 10) {
+                Image(systemName: "star.fill")
                     .font(.system(size: 24))
+                    .foregroundColor(AppPalette.warning)
+
                 Text("\(stars)")
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(AppPalette.text)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 10)
-            .background(.ultraThinMaterial)
+            .padding(.horizontal, 24)
+            .padding(.vertical, 12)
+            .background(AppPalette.surface)
+            .overlay(
+                Capsule()
+                    .stroke(AppPalette.border, lineWidth: 1)
+            )
             .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
         }
     }
 }
@@ -167,15 +182,17 @@ struct MenuButton: View {
     let title: String
     let subtitle: String
     let icon: String
-    let gradient: [Color]
+    let accentColor: Color
     let delay: Double
     let action: () -> Void
 
     @State private var isPressed = false
+    @State private var appear = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button(action: {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
                 isPressed = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -184,47 +201,52 @@ struct MenuButton: View {
             }
         }) {
             HStack(spacing: 20) {
-                // Icon
                 ZStack {
                     Circle()
-                        .fill(.white.opacity(0.3))
-                        .frame(width: 60, height: 60)
+                        .fill(accentColor)
+                        .frame(width: 56, height: 56)
 
                     Image(systemName: icon)
-                        .font(.system(size: 28, weight: .bold))
+                        .font(.system(size: 28, weight: .semibold))
                         .foregroundColor(.white)
                 }
 
-                // Text
-                VStack(alignment: .leading, spacing: 4) {
+                // Text content
+                VStack(alignment: .leading, spacing: 6) {
                     Text(title)
                         .font(.system(size: 22, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppPalette.text)
 
                     Text(subtitle)
                         .font(.system(size: 14, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(AppPalette.textMuted)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(AppPalette.textMuted.opacity(0.7))
             }
             .padding(20)
             .background(
-                LinearGradient(
-                    colors: gradient,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(AppPalette.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(AppPalette.border, lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: gradient[0].opacity(0.5), radius: isPressed ? 5 : 15, y: isPressed ? 2 : 8)
-            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())
+        .scaleEffect(appear ? 1.0 : 0.85)
+        .opacity(appear ? 1.0 : 0)
+        .animation(reduceMotion ? nil : .spring(response: 0.6, dampingFraction: 0.7).delay(delay), value: appear)
+        .onAppear {
+            appear = true
+        }
     }
 }
 
@@ -237,74 +259,56 @@ struct LanguageSelectorButton: View {
         Button(action: {
             showLanguageSelector = true
         }) {
-            HStack {
+            HStack(spacing: 10) {
                 Text(appState.currentLanguage.flag)
-                    .font(.system(size: 24))
+                    .font(.system(size: 22))
                 Text(appState.currentLanguage.displayName)
                     .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppPalette.text)
                 Image(systemName: "chevron.down")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(AppPalette.textMuted)
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
-            .background(.ultraThinMaterial)
+            .background(AppPalette.surface)
+            .overlay(
+                Capsule()
+                    .stroke(AppPalette.border, lineWidth: 1)
+            )
             .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
         }
-    }
-}
-
-// MARK: - Animated Background
-struct AnimatedGradientBackground: View {
-    @State private var animateGradient = false
-
-    var body: some View {
-        LinearGradient(
-            colors: [
-                Color(hex: "FF6B9D"),
-                Color(hex: "C371F4"),
-                Color(hex: "6E8EFB"),
-                Color(hex: "4ECDC4")
-            ],
-            startPoint: animateGradient ? .topLeading : .bottomLeading,
-            endPoint: animateGradient ? .bottomTrailing : .topTrailing
-        )
-        .ignoresSafeArea()
-        .onAppear {
-            withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
-                animateGradient = true
-            }
-        }
+        .accessibilityHint(Text("change_language"))
     }
 }
 
 // MARK: - Localized Text Helper
 struct LocalizedText {
-    static var practice: String {
-        NSLocalizedString("practice", comment: "Practice button")
+    let appState: AppState
+
+    var practice: String {
+        appState.localizedString("practice", comment: "Practice button")
     }
-    static var practiceSubtitle: String {
-        NSLocalizedString("practice_subtitle", comment: "Practice subtitle")
+    var practiceSubtitle: String {
+        appState.localizedString("practice_subtitle", comment: "Practice subtitle")
     }
-    static var challenge: String {
-        NSLocalizedString("challenge", comment: "Challenge button")
+    var challenge: String {
+        appState.localizedString("challenge", comment: "Challenge button")
     }
-    static var challengeSubtitle: String {
-        NSLocalizedString("challenge_subtitle", comment: "Challenge subtitle")
+    var challengeSubtitle: String {
+        appState.localizedString("challenge_subtitle", comment: "Challenge subtitle")
     }
-    static var progress: String {
-        NSLocalizedString("progress", comment: "Progress button")
+    var progress: String {
+        appState.localizedString("progress", comment: "Progress button")
     }
-    static var progressSubtitle: String {
-        NSLocalizedString("progress_subtitle", comment: "Progress subtitle")
+    var progressSubtitle: String {
+        appState.localizedString("progress_subtitle", comment: "Progress subtitle")
     }
-    static var settings: String {
-        NSLocalizedString("settings", comment: "Settings button")
+    var settings: String {
+        appState.localizedString("settings", comment: "Settings button")
     }
-    static var settingsSubtitle: String {
-        NSLocalizedString("settings_subtitle", comment: "Settings subtitle")
+    var settingsSubtitle: String {
+        appState.localizedString("settings_subtitle", comment: "Settings subtitle")
     }
 }
 

@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct PracticeView: View {
     let tableNumber: Int
@@ -13,14 +14,14 @@ struct PracticeView: View {
 
     @StateObject private var viewModel: PracticeViewModel
 
-    init(tableNumber: Int) {
+    init(tableNumber: Int, appState: AppState) {
         self.tableNumber = tableNumber
-        _viewModel = StateObject(wrappedValue: PracticeViewModel(tableNumber: tableNumber))
+        _viewModel = StateObject(wrappedValue: PracticeViewModel(tableNumber: tableNumber, appState: appState))
     }
 
     var body: some View {
         ZStack {
-            AnimatedGradientBackground()
+            AppBackground()
 
             if viewModel.showResults {
                 ResultsView(
@@ -34,40 +35,42 @@ struct PracticeView: View {
                     }
                 )
             } else {
-                VStack(spacing: 0) {
-                    // Top bar with progress and exit
-                    TopBar(
-                        progress: viewModel.session.progress,
-                        correctCount: viewModel.session.correctCount,
-                        totalQuestions: viewModel.session.questions.count,
-                        onExit: { dismiss() }
-                    )
+                ScrollView {
+                    VStack(spacing: 20) {
+                            // Top bar with progress and exit
+                            TopBar(
+                                progress: viewModel.session.progress,
+                                correctCount: viewModel.session.correctCount,
+                                totalQuestions: viewModel.session.questions.count,
+                                onExit: { dismiss() }
+                            )
+                            .padding(.top, 10)
 
-                    Spacer()
+                            // Question display
+                            if let question = viewModel.currentQuestion {
+                                QuestionDisplay(
+                                    question: question,
+                                    tableNumber: tableNumber,
+                                    showFeedback: viewModel.showFeedback,
+                                    isCorrect: viewModel.lastAnswerCorrect,
+                                    celebration: viewModel.celebration
+                                )
+                                .padding(.vertical, 10)
+                            }
 
-                    // Question display
-                    if let question = viewModel.currentQuestion {
-                        QuestionDisplay(
-                            question: question,
-                            tableNumber: tableNumber,
-                            showFeedback: viewModel.showFeedback,
-                            isCorrect: viewModel.lastAnswerCorrect,
-                            celebration: viewModel.celebration
-                        )
+                            // Answer input
+                            AnswerInputView(
+                                answer: $viewModel.userAnswer,
+                                isEnabled: !viewModel.showFeedback,
+                                onSubmit: {
+                                    viewModel.submitAnswer()
+                                }
+                            )
                     }
-
-                    Spacer()
-
-                    // Answer input
-                    AnswerInputView(
-                        answer: $viewModel.userAnswer,
-                        isEnabled: !viewModel.showFeedback,
-                        onSubmit: {
-                            viewModel.submitAnswer()
-                        }
-                    )
-                    .padding(.bottom, 30)
+                    .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 60 : 0)
+                    .padding(.bottom, 40)
                 }
+                .scrollIndicators(.hidden)
             }
         }
         .navigationBarBackButtonHidden(true)
@@ -83,12 +86,20 @@ class PracticeViewModel: ObservableObject {
     @Published var showResults = false
     @Published var celebration = false
 
+    private let tableNumber: Int
+    private let appState: AppState
+    private var answerStartTime: Date?
+
     var currentQuestion: Question? {
         session.currentQuestion
     }
 
-    init(tableNumber: Int) {
-        self.session = QuizSession(questions: Question.generate(for: tableNumber, count: 10, randomize: true))
+    init(tableNumber: Int, appState: AppState) {
+        self.tableNumber = tableNumber
+        self.appState = appState
+        let questionCount = max(5, appState.settings.questionsPerSession)
+        self.session = QuizSession(questions: Question.generate(for: tableNumber, count: questionCount, randomize: true))
+        self.answerStartTime = Date()
     }
 
     func submitAnswer() {
@@ -96,6 +107,16 @@ class PracticeViewModel: ObservableObject {
 
         lastAnswerCorrect = session.submitAnswer(answer)
         showFeedback = true
+        triggerHaptic(isCorrect: lastAnswerCorrect)
+
+        // Record progress
+        let timeSpent = answerStartTime?.timeIntervalSinceNow ?? 0
+        appState.userProgress.recordAnswer(
+            table: tableNumber,
+            correct: lastAnswerCorrect,
+            timeSpent: abs(timeSpent)
+        )
+        appState.userProgress.save()
 
         if lastAnswerCorrect {
             celebration = true
@@ -111,19 +132,34 @@ class PracticeViewModel: ObservableObject {
         showFeedback = false
         celebration = false
         userAnswer = ""
+        answerStartTime = Date() // Reset timer for next question
 
         if session.isComplete {
+            // Check if table is mastered
+            if let tableScore = appState.userProgress.tableScores[tableNumber],
+               tableScore.mastered {
+                appState.userProgress.completeTable(tableNumber)
+                appState.userProgress.save()
+            }
             showResults = true
         }
     }
 
     func restart() {
         session.reset()
-        session.questions = Question.generate(for: session.questions.first?.multiplier ?? 1, count: 10, randomize: true)
+        let questionCount = max(5, appState.settings.questionsPerSession)
+        session.questions = Question.generate(for: tableNumber, count: questionCount, randomize: true)
         userAnswer = ""
         showFeedback = false
         showResults = false
         celebration = false
+        answerStartTime = Date()
+    }
+
+    private func triggerHaptic(isCorrect: Bool) {
+        guard appState.settings.hapticEnabled else { return }
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(isCorrect ? .success : .error)
     }
 }
 
@@ -135,56 +171,63 @@ struct TopBar: View {
     let onExit: () -> Void
 
     var body: some View {
-        VStack(spacing: 15) {
+        VStack(spacing: 10) {
             HStack {
                 Button(action: onExit) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 28))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.2), radius: 5)
+                        .font(.system(size: 28, weight: .semibold))
+                        .foregroundColor(AppPalette.text)
                 }
+                .accessibilityLabel(Text("exit"))
 
                 Spacer()
 
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(Color(hex: "4ECDC4"))
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(AppPalette.secondary)
 
                     Text("\(correctCount)/\(totalQuestions)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .foregroundColor(AppPalette.text)
                 }
-                .padding(.horizontal, 15)
-                .padding(.vertical, 8)
-                .background(.ultraThinMaterial)
-                .clipShape(Capsule())
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(
+                    Capsule()
+                        .fill(AppPalette.surface)
+                )
+                .overlay(
+                    Capsule()
+                        .stroke(AppPalette.border, lineWidth: 1)
+                )
             }
-            .padding(.horizontal)
-            .padding(.top, 10)
+            .padding(.horizontal, 24)
 
-            // Progress bar
-            GeometryReader { geometry in
+            GeometryReader { progressGeometry in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(Color.white.opacity(0.3))
+                    Capsule()
+                        .fill(AppPalette.border.opacity(0.6))
                         .frame(height: 10)
-
-                    RoundedRectangle(cornerRadius: 10)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "4ECDC4"), Color(hex: "44A08D")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
+                        .overlay(
+                            Capsule()
+                                .stroke(AppPalette.border, lineWidth: 1)
                         )
-                        .frame(width: geometry.size.width * progress, height: 10)
-                        .animation(.spring(response: 0.5), value: progress)
+
+                    Capsule()
+                        .fill(AppPalette.secondary)
+                        .frame(width: progressGeometry.size.width * progress, height: 10)
+                        .overlay(
+                            Capsule()
+                                .fill(Color.white.opacity(0.2))
+                        )
+                        .animation(.spring(response: 0.6, dampingFraction: 0.7), value: progress)
                 }
             }
             .frame(height: 10)
-            .padding(.horizontal)
+            .padding(.horizontal, 24)
         }
+        .padding(.vertical, 8)
     }
 }
 
@@ -198,40 +241,14 @@ struct QuestionDisplay: View {
 
     @State private var bounce = false
     @State private var rotation: Double = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(spacing: 30) {
-            // Animated emojis
-            if celebration {
-                HStack(spacing: 10) {
-                    ForEach(0..<5, id: \.self) { index in
-                        Text(["🎉", "⭐", "🎊", "✨", "🌟"].randomElement()!)
-                            .font(.system(size: 40))
-                            .offset(y: bounce ? -20 : 0)
-                            .animation(
-                                .spring(response: 0.4, dampingFraction: 0.5)
-                                .delay(Double(index) * 0.05),
-                                value: bounce
-                            )
-                    }
-                }
-                .onAppear {
-                    bounce = true
-                }
-            }
-
-            // Question card
-            VStack(spacing: 20) {
+        VStack(spacing: 16) {
+            VStack(spacing: 16) {
                 Text(question.questionText)
-                    .font(.system(size: 72, weight: .black, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white, Color(hex: "FFE66D")],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
+                    .font(.system(size: 68, weight: .black, design: .rounded))
+                    .foregroundColor(AppPalette.text)
                     .scaleEffect(bounce ? 1.1 : 1.0)
                     .rotationEffect(.degrees(rotation))
 
@@ -239,21 +256,28 @@ struct QuestionDisplay: View {
                     FeedbackView(isCorrect: isCorrect, correctAnswer: question.answer)
                 } else {
                     Text("=")
-                        .font(.system(size: 60, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .font(.system(size: 56, weight: .black, design: .rounded))
+                        .foregroundColor(AppPalette.text)
                 }
             }
-            .padding(40)
+            .padding(28)
             .background(
-                RoundedRectangle(cornerRadius: 30)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(AppPalette.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(AppPalette.border, lineWidth: 1)
             )
         }
         .onChange(of: celebration) { newValue in
             if newValue {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    rotation = 360
+                if reduceMotion {
+                    rotation = 0
+                } else {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                        rotation = 360
+                    }
                 }
             }
         }
@@ -266,28 +290,23 @@ struct FeedbackView: View {
     let correctAnswer: Int
 
     var body: some View {
-        VStack(spacing: 15) {
-            HStack(spacing: 10) {
-                Image(systemName: isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(isCorrect ? Color(hex: "4ECDC4") : Color(hex: "FF6B6B"))
+        VStack(spacing: 12) {
+            // Icon only - no text
+            Image(systemName: isCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                .font(.system(size: 52))
+                .foregroundColor(isCorrect ? AppPalette.secondary : AppPalette.primary)
 
-                Text(isCorrect ? "correct" : "incorrect")
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundColor(isCorrect ? Color(hex: "4ECDC4") : Color(hex: "FF6B6B"))
-            }
-
+            // Show correct answer if wrong (number only, no explanatory text)
             if !isCorrect {
-                Text("correct_answer_is")
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.8))
-                +
-                Text(" \(correctAnswer)")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                Text("\(correctAnswer)")
+                    .font(.system(size: 42, weight: .black, design: .rounded))
+                    .foregroundColor(AppPalette.primary)
             }
         }
         .transition(.scale.combined(with: .opacity))
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(Text(isCorrect ? "correct" : "incorrect"))
+        .accessibilityValue(isCorrect ? Text("") : Text("\(correctAnswer)"))
     }
 }
 
@@ -297,59 +316,80 @@ struct AnswerInputView: View {
     let isEnabled: Bool
     let onSubmit: () -> Void
 
-    @FocusState private var isFocused: Bool
+    @EnvironmentObject var appState: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var answerScale: CGFloat = 1.0
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Answer display
-            HStack(spacing: 15) {
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Text(answer.isEmpty ? "?" : answer)
-                    .font(.system(size: 56, weight: .black, design: .rounded))
-                    .foregroundColor(.white)
-                    .frame(minWidth: 100)
-                    .padding(.horizontal, 25)
-                    .padding(.vertical, 15)
+                    .font(.system(size: 52, weight: .black, design: .rounded))
+                    .foregroundColor(AppPalette.text)
+                    .frame(minWidth: 110)
+                    .padding(.horizontal, 24)
+                    .padding(.vertical, 14)
                     .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(.ultraThinMaterial)
-                            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(AppPalette.surface)
                     )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(AppPalette.border, lineWidth: 1)
+                    )
+                    .scaleEffect(answerScale)
+                    .onChange(of: answer) { _ in
+                        guard !reduceMotion else { return }
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                            answerScale = 1.15
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+                                answerScale = 1.0
+                            }
+                        }
+                    }
 
                 if !answer.isEmpty {
                     Button(action: {
                         answer = ""
                     }) {
                         Image(systemName: "delete.left.fill")
-                            .font(.system(size: 32))
-                            .foregroundColor(.white)
-                            .padding(15)
-                            .background(Circle().fill(.ultraThinMaterial))
+                            .font(.system(size: 28, weight: .semibold))
+                            .foregroundColor(AppPalette.text)
+                            .padding(14)
+                            .background(
+                                Circle()
+                                    .fill(AppPalette.surface)
+                            )
+                            .overlay(
+                                Circle()
+                                    .stroke(AppPalette.border, lineWidth: 1)
+                            )
                     }
+                    .accessibilityLabel(Text("clear_answer"))
                 }
             }
 
             // Number pad
             NumberPad(answer: $answer, isEnabled: isEnabled)
+                .padding(.vertical, 8)
 
-            // Submit button
             Button(action: onSubmit) {
-                Text("check")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                Text(appState.localizedString("check", comment: ""))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(answer.isEmpty || !isEnabled ? AppPalette.textMuted : .white)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 18)
+                    .padding(.vertical, 14)
                     .background(
-                        LinearGradient(
-                            colors: answer.isEmpty ? [Color.gray, Color.gray.opacity(0.8)] : [Color(hex: "4ECDC4"), Color(hex: "44A08D")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
+                        Capsule()
+                            .fill(answer.isEmpty || !isEnabled ? AppPalette.border : AppPalette.secondary)
                     )
-                    .clipShape(Capsule())
-                    .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
             }
             .disabled(answer.isEmpty || !isEnabled)
-            .padding(.horizontal)
+            .padding(.horizontal, 24)
+            .padding(.bottom, 16)
+            .opacity(answer.isEmpty || !isEnabled ? 0.5 : 1.0)
         }
     }
 }
@@ -367,9 +407,9 @@ struct NumberPad: View {
     ]
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 6) {
             ForEach(numbers, id: \.self) { row in
-                HStack(spacing: 12) {
+                HStack(spacing: 6) {
                     ForEach(row, id: \.self) { number in
                         if !number.isEmpty {
                             NumberButton(
@@ -380,13 +420,13 @@ struct NumberPad: View {
                             }
                         } else {
                             Color.clear
-                                .frame(width: 70, height: 70)
+                                .frame(width: 58, height: 58)
                         }
                     }
                 }
             }
         }
-        .padding(.horizontal)
+        .padding(.horizontal, 20)
     }
 
     private func handleNumberTap(_ number: String) {
@@ -423,24 +463,29 @@ struct NumberButton: View {
             }
         }) {
             Text(number)
-                .font(.system(size: 32, weight: .semibold, design: .rounded))
-                .foregroundColor(.white)
-                .frame(width: 70, height: 70)
+                .font(.system(size: 26, weight: .bold, design: .rounded))
+                .foregroundColor(AppPalette.text)
+                .frame(width: 58, height: 58)
                 .background(
                     Circle()
-                        .fill(.ultraThinMaterial)
-                        .shadow(color: .black.opacity(0.1), radius: isPressed ? 2 : 8, y: isPressed ? 1 : 4)
+                        .fill(AppPalette.surface)
                 )
-                .scaleEffect(isPressed ? 0.9 : 1.0)
+                .overlay(
+                    Circle()
+                        .stroke(AppPalette.border, lineWidth: 1)
+                )
+                .scaleEffect(isPressed ? 0.92 : 1.0)
         }
         .disabled(!isEnabled)
         .opacity(isEnabled ? 1.0 : 0.5)
+        .accessibilityLabel(number == "⌫" ? Text("delete") : Text(number))
     }
 }
 
 #Preview {
-    NavigationStack {
-        PracticeView(tableNumber: 7)
-            .environmentObject(AppState())
+    let appState = AppState()
+    return NavigationStack {
+        PracticeView(tableNumber: 7, appState: appState)
+            .environmentObject(appState)
     }
 }

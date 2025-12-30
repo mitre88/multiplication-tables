@@ -10,35 +10,36 @@ struct ProgressView: View {
 
     var body: some View {
         ZStack {
-            AnimatedGradientBackground()
+            AppBackground()
 
             ScrollView {
                 VStack(spacing: 25) {
-                    // Header
-                    VStack(spacing: 15) {
-                        Text("📊")
-                            .font(.system(size: 80))
+                        // Header
+                        VStack(spacing: 15) {
+                            Text("📊")
+                                .font(.system(size: 80))
 
-                        Text("your_progress")
-                            .font(.system(size: 36, weight: .black, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                    .padding(.top, 20)
+                    Text(appState.localizedString("your_progress", comment: ""))
+                        .font(.system(size: 36, weight: .black, design: .rounded))
+                        .foregroundColor(AppPalette.primary)
+                        }
+                        .padding(.top, 20)
 
-                    // Overall stats
-                    OverallStatsCard(progress: appState.userProgress)
-                        .padding(.horizontal)
+                        // Overall stats
+                        OverallStatsCard(progress: appState.userProgress, appState: appState)
+                            .padding(.horizontal, 20)
 
-                    // Achievements
-                    if !appState.userProgress.achievements.isEmpty {
-                        AchievementsSection(achievements: appState.userProgress.achievements)
-                            .padding(.horizontal)
-                    }
+                        // Achievements
+                        if !appState.userProgress.achievements.isEmpty {
+                            AchievementsSection(achievements: appState.userProgress.achievements)
+                                .padding(.horizontal, 20)
+                        }
 
-                    // Table progress
-                    TableProgressSection(progress: appState.userProgress)
-                        .padding(.horizontal)
+                        // Table progress
+                        TableProgressSection(progress: appState.userProgress)
+                            .padding(.horizontal, 20)
                 }
+                .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 60 : 0)
                 .padding(.bottom, 30)
             }
         }
@@ -48,60 +49,69 @@ struct ProgressView: View {
 // MARK: - Overall Stats Card
 struct OverallStatsCard: View {
     let progress: UserProgress
+    let appState: AppState
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Stars
-            HStack(spacing: 10) {
+        VStack(spacing: 24) {
+            // Stars with gradient
+            HStack(spacing: 12) {
                 Text("⭐")
-                    .font(.system(size: 40))
+                    .font(.system(size: 48))
                 Text("\(progress.stars)")
-                    .font(.system(size: 36, weight: .black, design: .rounded))
-                    .foregroundColor(.white)
-                Text("stars")
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.8))
+                    .font(.system(size: 42, weight: .black, design: .rounded))
+                    .foregroundColor(AppPalette.text)
+                Text(appState.localizedString("stars", comment: ""))
+                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .foregroundColor(AppPalette.text)
             }
 
             Divider()
-                .background(Color.white.opacity(0.3))
+                .background(AppPalette.border)
+                .frame(height: 1.5)
 
             // Stats grid
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 24) {
                 ProgressStatItem(
                     icon: "checkmark.circle.fill",
                     value: "\(progress.totalQuestionsAnswered)",
                     label: "total_questions",
-                    color: Color(hex: "4ECDC4")
+                    color: AppPalette.secondary,
+                    appState: appState
                 )
 
                 ProgressStatItem(
                     icon: "percent",
                     value: String(format: "%.0f%%", progress.accuracy),
                     label: "accuracy",
-                    color: Color(hex: "FFB347")
+                    color: AppPalette.warning,
+                    appState: appState
                 )
 
                 ProgressStatItem(
                     icon: "flame.fill",
                     value: "\(progress.bestStreak)",
                     label: "best_streak",
-                    color: Color(hex: "FF6B9D")
+                    color: AppPalette.primary,
+                    appState: appState
                 )
 
                 ProgressStatItem(
                     icon: "book.fill",
                     value: "\(progress.completedTables.count)",
                     label: "tables_mastered",
-                    color: Color(hex: "6E8EFB")
+                    color: AppPalette.info,
+                    appState: appState
                 )
             }
         }
-        .padding(25)
+        .padding(28)
         .background(
-            RoundedRectangle(cornerRadius: 25)
-                .fill(.ultraThinMaterial)
-                .shadow(color: .black.opacity(0.2), radius: 15, y: 8)
+            RoundedRectangle(cornerRadius: 24)
+                .fill(AppPalette.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(AppPalette.border, lineWidth: 1)
         )
     }
 }
@@ -111,34 +121,66 @@ struct ProgressStatItem: View {
     let value: String
     let label: String
     let color: Color
+    let appState: AppState
+
+    @State private var iconScale = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.system(size: 32))
+                .font(.system(size: 36, weight: .semibold))
                 .foregroundColor(color)
+                .scaleEffect(iconScale ? 1.1 : 1.0)
+                .animation(reduceMotion ? nil : .easeInOut(duration: 1.5).repeatForever(autoreverses: true), value: iconScale)
 
-            Text(value)
-                .font(.system(size: 28, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+            AnimatedText(text: value)
+                .font(.system(size: 32, weight: .black, design: .rounded))
+                .foregroundColor(AppPalette.text)
 
-            Text(NSLocalizedString(label, comment: ""))
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.8))
+            Text(appState.localizedString(label, comment: ""))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .foregroundColor(AppPalette.textMuted)
                 .multilineTextAlignment(.center)
         }
+        .onAppear {
+            iconScale = !reduceMotion
+        }
+    }
+}
+
+// MARK: - Animated Text
+struct AnimatedText: View {
+    let text: String
+    @State private var appear = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Text(text)
+            .scaleEffect(appear ? 1.0 : 0.5)
+            .opacity(appear ? 1.0 : 0)
+            .onAppear {
+                if reduceMotion {
+                    appear = true
+                } else {
+                    withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.2)) {
+                        appear = true
+                    }
+                }
+            }
     }
 }
 
 // MARK: - Achievements Section
 struct AchievementsSection: View {
     let achievements: [Achievement]
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         VStack(alignment: .leading, spacing: 15) {
-            Text("achievements")
+            Text(appState.localizedString("achievements", comment: ""))
                 .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(AppPalette.text)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 15) {
@@ -153,44 +195,45 @@ struct AchievementsSection: View {
 
 struct AchievementCard: View {
     let achievement: Achievement
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 14) {
             Image(systemName: achievement.type.icon)
-                .font(.system(size: 40))
+                .font(.system(size: 44, weight: .semibold))
                 .foregroundColor(colorForType(achievement.type.color))
 
-            Text(achievement.type.title)
-                .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+            Text(achievement.type.title(appState: appState))
+                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .foregroundColor(AppPalette.text)
                 .multilineTextAlignment(.center)
 
-            Text(achievement.type.description)
-                .font(.system(size: 12, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.8))
+            Text(achievement.type.description(appState: appState))
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundColor(AppPalette.textMuted)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
         }
-        .frame(width: 150)
-        .padding(20)
+        .frame(width: 160)
+        .padding(22)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(colorForType(achievement.type.color), lineWidth: 2)
-                )
+                .fill(AppPalette.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(colorForType(achievement.type.color), lineWidth: 1)
         )
     }
 
     private func colorForType(_ colorName: String) -> Color {
         switch colorName {
-        case "yellow": return .yellow
-        case "orange": return .orange
-        case "purple": return Color(hex: "C371F4")
-        case "blue": return Color(hex: "6E8EFB")
-        case "gold": return Color(hex: "FFD700")
-        default: return .white
+        case "yellow": return AppPalette.warning
+        case "orange": return AppPalette.primary
+        case "purple": return AppPalette.info
+        case "blue": return AppPalette.accent
+        case "gold": return AppPalette.warning
+        default: return AppPalette.textMuted
         }
     }
 }
@@ -198,31 +241,35 @@ struct AchievementCard: View {
 // MARK: - Table Progress Section
 struct TableProgressSection: View {
     let progress: UserProgress
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            Text("table_progress")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+        VStack(alignment: .leading, spacing: 18) {
+            Text(appState.localizedString("table_progress", comment: ""))
+                .font(.system(size: 26, weight: .black, design: .rounded))
+                .foregroundColor(AppPalette.text)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 14) {
                 ForEach(Array(progress.tableScores.sorted(by: { $0.key < $1.key })), id: \.key) { table, score in
                     TableProgressRow(table: table, score: score)
                 }
 
                 if progress.tableScores.isEmpty {
-                    Text("no_progress_yet")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
+                    Text(appState.localizedString("no_progress_yet", comment: ""))
+                        .font(.system(size: 17, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppPalette.textMuted)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 30)
+                        .padding(.vertical, 36)
                 }
             }
-            .padding(20)
+            .padding(24)
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(.ultraThinMaterial)
-                    .shadow(color: .black.opacity(0.2), radius: 15, y: 8)
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(AppPalette.surface)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(AppPalette.border, lineWidth: 1)
             )
         }
     }
@@ -231,6 +278,7 @@ struct TableProgressSection: View {
 struct TableProgressRow: View {
     let table: Int
     let score: TableScore
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         HStack(spacing: 15) {
@@ -241,20 +289,14 @@ struct TableProgressRow: View {
                 .frame(width: 50, height: 50)
                 .background(
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: [Color(hex: "FF6B9D"), Color(hex: "C371F4")],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(AppPalette.primary)
                 )
 
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
-                    Text("table_x")
+                    Text(appState.localizedString("table_x", comment: ""))
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppPalette.text)
 
                     Spacer()
 
@@ -262,47 +304,54 @@ struct TableProgressRow: View {
                         HStack(spacing: 5) {
                             Image(systemName: "crown.fill")
                                 .font(.system(size: 14))
-                                .foregroundColor(.yellow)
-                            Text("mastered")
+                                .foregroundColor(AppPalette.warning)
+                            Text(appState.localizedString("mastered", comment: ""))
                                 .font(.system(size: 13, weight: .semibold, design: .rounded))
-                                .foregroundColor(.yellow)
+                                .foregroundColor(AppPalette.warning)
                         }
                     }
                 }
 
-                // Progress bar
+                // Progress bar with shimmer effect
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         RoundedRectangle(cornerRadius: 5)
-                            .fill(Color.white.opacity(0.3))
+                            .fill(AppPalette.border.opacity(0.7))
                             .frame(height: 8)
 
-                        RoundedRectangle(cornerRadius: 5)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color(hex: "4ECDC4"), Color(hex: "44A08D")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: geometry.size.width * (score.accuracy / 100), height: 8)
+                        ProgressBarWithShimmer(
+                            width: geometry.size.width * (score.accuracy / 100),
+                            height: 8
+                        )
                     }
                 }
                 .frame(height: 8)
 
                 HStack {
-                    Text("\(score.attempts) attempts")
+                    Text("\(score.attempts) " + appState.localizedString("attempts", comment: ""))
                         .font(.system(size: 12, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(AppPalette.textMuted)
 
                     Spacer()
 
                     Text("\(Int(score.accuracy))%")
                         .font(.system(size: 14, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                }
+                        .foregroundColor(AppPalette.text)
             }
         }
+    }
+}
+}
+
+// MARK: - Progress Bar with Shimmer
+struct ProgressBarWithShimmer: View {
+    let width: CGFloat
+    let height: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: 5)
+            .fill(AppPalette.secondary)
+            .frame(width: width, height: height)
     }
 }
 

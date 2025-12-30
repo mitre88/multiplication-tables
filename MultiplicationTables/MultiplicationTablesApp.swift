@@ -16,7 +16,6 @@ struct MultiplicationTablesApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(appState)
-                .preferredColorScheme(.light)
         }
     }
 }
@@ -25,8 +24,8 @@ struct MultiplicationTablesApp: App {
 class AppState: ObservableObject {
     @Published var showSplash = true
     @Published var currentLanguage: AppLanguage = .english
-    @Published var userProgress = UserProgress()
-    @Published var settings = AppSettings()
+    @Published var userProgress = UserProgress.load()
+    @Published var settings = AppSettings.load()
 
     init() {
         loadSettings()
@@ -63,5 +62,20 @@ enum AppLanguage: String, CaseIterable {
         case .spanish: return "🇪🇸"
         case .french: return "🇫🇷"
         }
+    }
+
+    var bundle: Bundle {
+        guard let path = Bundle.main.path(forResource: rawValue, ofType: "lproj"),
+              let bundle = Bundle(path: path) else {
+            return Bundle.main
+        }
+        return bundle
+    }
+}
+
+// MARK: - Localization Helper
+extension AppState {
+    func localizedString(_ key: String, comment: String = "") -> String {
+        return NSLocalizedString(key, bundle: currentLanguage.bundle, comment: comment)
     }
 }

@@ -1,6 +1,10 @@
 /* English Localization */
 
 /* Main Menu */
+"app_name_line1" = "Multiplication";
+"app_name_line2" = "Máster";
+"app_name_full" = "Multiplication Máster";
+"app_tagline" = "Practice your multiplication tables.";
 "practice" = "Practice";
 "practice_subtitle" = "Learn multiplication tables";
 "challenge" = "Challenge";
@@ -9,6 +13,7 @@
 "progress_subtitle" = "Track your achievements";
 "settings" = "Settings";
 "settings_subtitle" = "Customize your experience";
+"change_language" = "Change language";
 
 /* Table Selector */
 "select_table" = "Select a Table";
@@ -24,6 +29,9 @@
 "incorrect" = "Incorrect";
 "correct_answer_is" = "The correct answer is";
 "check" = "Check";
+"exit" = "Exit";
+"clear_answer" = "Clear answer";
+"delete" = "Delete";
 
 /* Results */
 "excellent" = "Excellent!";
@@ -88,3 +96,5 @@
 "cancel" = "Cancel";
 "reset" = "Reset";
 "select_language" = "Select Language";
+"version" = "Version";
+"app_dedication" = "Made with love for my son Dylan Alessandro. I hope this app helps you improve your math skills. Love, Dad.";

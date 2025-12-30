@@ -4,6 +4,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 struct UserProgress: Codable {
     var completedTables: Set<Int> = []
@@ -140,23 +141,23 @@ struct Achievement: Codable, Identifiable {
         case speedDemon
         case centurion
 
-        var title: LocalizedStringKey {
+        func title(appState: AppState) -> String {
             switch self {
-            case .firstSteps: return "first_steps_title"
-            case .perfectTen: return "perfect_ten_title"
-            case .master: return "master_title"
-            case .speedDemon: return "speed_demon_title"
-            case .centurion: return "centurion_title"
+            case .firstSteps: return appState.localizedString("first_steps_title", comment: "")
+            case .perfectTen: return appState.localizedString("perfect_ten_title", comment: "")
+            case .master: return appState.localizedString("master_title", comment: "")
+            case .speedDemon: return appState.localizedString("speed_demon_title", comment: "")
+            case .centurion: return appState.localizedString("centurion_title", comment: "")
             }
         }
 
-        var description: LocalizedStringKey {
+        func description(appState: AppState) -> String {
             switch self {
-            case .firstSteps: return "first_steps_desc"
-            case .perfectTen: return "perfect_ten_desc"
-            case .master: return "master_desc"
-            case .speedDemon: return "speed_demon_desc"
-            case .centurion: return "centurion_desc"
+            case .firstSteps: return appState.localizedString("first_steps_desc", comment: "")
+            case .perfectTen: return appState.localizedString("perfect_ten_desc", comment: "")
+            case .master: return appState.localizedString("master_desc", comment: "")
+            case .speedDemon: return appState.localizedString("speed_demon_desc", comment: "")
+            case .centurion: return appState.localizedString("centurion_desc", comment: "")
             }
         }
 

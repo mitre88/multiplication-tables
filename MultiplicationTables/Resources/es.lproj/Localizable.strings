@@ -1,6 +1,10 @@
 /* Spanish Localization / Localización en Español */
 
 /* Main Menu */
+"app_name_line1" = "Multiplication";
+"app_name_line2" = "Máster";
+"app_name_full" = "Multiplication Máster";
+"app_tagline" = "Practica las tablas de multiplicar.";
 "practice" = "Practicar";
 "practice_subtitle" = "Aprende las tablas de multiplicar";
 "challenge" = "Desafío";
@@ -9,6 +13,7 @@
 "progress_subtitle" = "Sigue tus logros";
 "settings" = "Configuración";
 "settings_subtitle" = "Personaliza tu experiencia";
+"change_language" = "Cambiar idioma";
 
 /* Table Selector */
 "select_table" = "Selecciona una Tabla";
@@ -24,6 +29,9 @@
 "incorrect" = "Incorrecto";
 "correct_answer_is" = "La respuesta correcta es";
 "check" = "Verificar";
+"exit" = "Salir";
+"clear_answer" = "Borrar respuesta";
+"delete" = "Borrar";
 
 /* Results */
 "excellent" = "¡Excelente!";
@@ -88,3 +96,5 @@
 "cancel" = "Cancelar";
 "reset" = "Reiniciar";
 "select_language" = "Seleccionar Idioma";
+"version" = "Versión";
+"app_dedication" = "Hecho con amor para mi hijo Dylan Alessandro, espero que esta app te ayude a mejorar tus habilidades matemáticas, con amor papá.";

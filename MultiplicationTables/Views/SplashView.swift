@@ -4,167 +4,104 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct SplashView: View {
     @EnvironmentObject var appState: AppState
-    @State private var scale: CGFloat = 0.5
-    @State private var opacity: Double = 0
-    @State private var rotation: Double = 0
-    @State private var showStars = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var logoScale: CGFloat = 0.92
+    @State private var logoOpacity: Double = 0
 
     var body: some View {
         ZStack {
-            // Gradient background
-            LinearGradient(
-                colors: [
-                    Color(hex: "FF6B9D"),
-                    Color(hex: "C371F4"),
-                    Color(hex: "6E8EFB"),
-                    Color(hex: "4ECDC4")
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea()
+            AppBackground()
 
-            // Animated stars
-            if showStars {
-                ForEach(0..<20, id: \.self) { index in
-                    StarView(delay: Double(index) * 0.1)
-                }
-            }
-
-            VStack(spacing: 30) {
-                Spacer()
-
-                // App Logo
+            VStack(spacing: 24) {
                 ZStack {
-                    // Glow effect
                     Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [Color.white.opacity(0.3), Color.clear],
-                                center: .center,
-                                startRadius: 60,
-                                endRadius: 120
-                            )
+                        .fill(AppPalette.surface)
+                        .overlay(
+                            Circle()
+                                .stroke(AppPalette.border, lineWidth: 2)
                         )
-                        .frame(width: 240, height: 240)
-                        .blur(radius: 20)
 
-                    // Logo background
-                    Circle()
-                        .fill(.white)
-                        .frame(width: 160, height: 160)
-                        .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
-
-                    // Logo content
-                    VStack(spacing: 5) {
-                        Text("✖️")
-                            .font(.system(size: 70))
-                            .rotationEffect(.degrees(rotation))
-
-                        Text("×")
-                            .font(.system(size: 40, weight: .black))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [Color(hex: "FF6B9D"), Color(hex: "C371F4")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                    }
+                    Text("×")
+                        .font(.system(size: 120, weight: .black, design: .rounded))
+                        .foregroundColor(AppPalette.primary)
                 }
-                .scaleEffect(scale)
-                .opacity(opacity)
+                .frame(width: 220, height: 220)
+                .scaleEffect(logoScale)
+                .opacity(logoOpacity)
 
-                // App name
-                VStack(spacing: 10) {
-                    Text("Multiplication")
-                        .font(.system(size: 42, weight: .black, design: .rounded))
-                        .foregroundColor(.white)
-                        .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+                VStack(spacing: 4) {
+                    Text(appState.localizedString("app_name_line1", comment: "App name line 1"))
+                        .font(.system(size: 28, weight: .semibold, design: .rounded))
+                        .foregroundColor(AppPalette.text)
 
-                    Text("Masters")
-                        .font(.system(size: 48, weight: .black, design: .rounded))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.white, Color(hex: "FFE66D")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .shadow(color: .black.opacity(0.3), radius: 10, y: 5)
+                    Text(appState.localizedString("app_name_line2", comment: "App name line 2"))
+                        .font(.system(size: 38, weight: .black, design: .rounded))
+                        .foregroundColor(AppPalette.primary)
+
+                    Text(appState.localizedString("app_tagline", comment: "App tagline"))
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundColor(AppPalette.textMuted)
+                        .multilineTextAlignment(.center)
+                        .padding(.top, 4)
+                        .padding(.horizontal, 24)
                 }
-                .opacity(opacity)
-
-                Spacer()
-
-                // Loading indicator
-                ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                    .scaleEffect(1.5)
-                    .padding(.bottom, 50)
-                    .opacity(opacity)
+                .opacity(logoOpacity)
             }
+            .padding(.horizontal, 24)
         }
         .onAppear {
-            startAnimations()
+            startFlatAnimations()
         }
     }
 
-    private func startAnimations() {
-        // Logo animation
-        withAnimation(.spring(response: 0.8, dampingFraction: 0.6)) {
-            scale = 1.0
-            opacity = 1.0
-        }
+    private func startFlatAnimations() {
+        guard !reduceMotion else {
+            logoScale = 1.0
+            logoOpacity = 1.0
 
-        // Rotation animation
-        withAnimation(.linear(duration: 2).repeatForever(autoreverses: false)) {
-            rotation = 360
-        }
-
-        // Show stars
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            showStars = true
-        }
-
-        // Hide splash after delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
-            withAnimation {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 appState.showSplash = false
             }
+            return
+        }
+
+        withAnimation(.easeOut(duration: 0.5).delay(0.1)) {
+            logoScale = 1.0
+            logoOpacity = 1.0
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.1) {
+            appState.showSplash = false
         }
     }
 }
 
-// MARK: - Star View Component
-struct StarView: View {
-    let delay: Double
-    @State private var yOffset: CGFloat = 0
-    @State private var opacity: Double = 0
-    @State private var scale: CGFloat = 0
-
-    private let xPosition = CGFloat.random(in: 50...350)
-    private let size = CGFloat.random(in: 20...40)
-
+// MARK: - Flat Background
+struct AppBackground: View {
     var body: some View {
-        Text("⭐")
-            .font(.system(size: size))
-            .offset(x: xPosition - 200, y: yOffset)
-            .opacity(opacity)
-            .scaleEffect(scale)
-            .onAppear {
-                withAnimation(
-                    .easeInOut(duration: 1.5)
-                    .delay(delay)
-                ) {
-                    opacity = 1
-                    scale = 1
-                    yOffset = -600
-                }
-            }
+        ZStack {
+            AppPalette.background
+
+            RoundedRectangle(cornerRadius: 48)
+                .fill(AppPalette.surfaceAlt.opacity(0.7))
+                .frame(width: 260, height: 260)
+                .offset(x: -140, y: -220)
+
+            Circle()
+                .fill(AppPalette.accent.opacity(0.08))
+                .frame(width: 220, height: 220)
+                .offset(x: 160, y: -160)
+
+            RoundedRectangle(cornerRadius: 36)
+                .fill(AppPalette.primary.opacity(0.08))
+                .frame(width: 280, height: 180)
+                .offset(x: 120, y: 240)
+        }
+        .ignoresSafeArea()
     }
 }
 
@@ -176,11 +113,11 @@ extension Color {
         Scanner(string: hex).scanHexInt64(&int)
         let a, r, g, b: UInt64
         switch hex.count {
-        case 3: // RGB (12-bit)
+        case 3:
             (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
+        case 6:
             (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
+        case 8:
             (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
         default:
             (a, r, g, b) = (255, 0, 0, 0)
@@ -191,6 +128,61 @@ extension Color {
             green: Double(g) / 255,
             blue: Double(b) / 255,
             opacity: Double(a) / 255
+        )
+    }
+}
+
+enum AppPalette {
+    static let background = dynamicColor(light: "F7F4EF", dark: "1B1A17")
+    static let surface = dynamicColor(light: "FFFFFF", dark: "262420")
+    static let surfaceAlt = dynamicColor(light: "F1EAE2", dark: "2F2C27")
+    static let border = dynamicColor(light: "E6DDD3", dark: "3A3630")
+    static let primary = Color(hex: "E76F51")
+    static let secondary = Color(hex: "2A9D8F")
+    static let accent = Color(hex: "2E86AB")
+    static let warning = Color(hex: "F4A261")
+    static let info = Color(hex: "3D5A80")
+    static let text = dynamicColor(light: "1F1A16", dark: "F6F1EB")
+    static let textMuted = dynamicColor(light: "6B625A", dark: "C4BBB1")
+
+    static let tableColors: [Color] = [
+        Color(hex: "D75A4A"),
+        Color(hex: "2A9D8F"),
+        Color(hex: "2E86AB"),
+        Color(hex: "F08A4B"),
+        Color(hex: "C0862B"),
+        Color(hex: "6B8F71")
+    ]
+
+    private static func dynamicColor(light: String, dark: String) -> Color {
+        Color(uiColor: UIColor { trait in
+            let hex = trait.userInterfaceStyle == .dark ? dark : light
+            return UIColor(hex: hex) ?? .clear
+        })
+    }
+}
+
+extension UIColor {
+    convenience init?(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        guard Scanner(string: hex).scanHexInt64(&int) else { return nil }
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3:
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6:
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8:
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            return nil
+        }
+        self.init(
+            red: CGFloat(r) / 255,
+            green: CGFloat(g) / 255,
+            blue: CGFloat(b) / 255,
+            alpha: CGFloat(a) / 255
         )
     }
 }

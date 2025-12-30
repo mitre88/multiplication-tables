@@ -9,7 +9,6 @@ struct TableSelectorView: View {
     @EnvironmentObject var appState: AppState
     @State private var selectedTable: Int?
     @State private var showPractice = false
-    @State private var expandedRange = false
 
     private let columns = [
         GridItem(.flexible()),
@@ -23,59 +22,59 @@ struct TableSelectorView: View {
 
     var body: some View {
         ZStack {
-            AnimatedGradientBackground()
+            AppBackground()
 
             ScrollView {
-                VStack(spacing: 30) {
-                    // Title
-                    VStack(spacing: 10) {
-                        Text("select_table")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
+                VStack(spacing: 28) {
+                        VStack(spacing: 12) {
+                            Text(appState.localizedString("select_table", comment: ""))
+                                .font(.system(size: 34, weight: .black, design: .rounded))
+                                .foregroundColor(AppPalette.primary)
 
-                        Text("choose_table_practice")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.white.opacity(0.9))
-                            .multilineTextAlignment(.center)
-                    }
-                    .padding(.top, 20)
+                            Text(appState.localizedString("choose_table_practice", comment: ""))
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundColor(AppPalette.textMuted)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 24)
 
-                    // Quick stats
-                    StatsBar(progress: appState.userProgress)
-                        .padding(.horizontal)
+                        StatsBar(progress: appState.userProgress, appState: appState)
+                            .padding(.horizontal, 20)
 
-                    // Table grid
-                    LazyVGrid(columns: columns, spacing: 15) {
-                        ForEach(availableTables, id: \.self) { table in
-                            TableCard(
-                                table: table,
-                                progress: appState.userProgress.tableScores[table]
-                            ) {
-                                selectedTable = table
-                                showPractice = true
+                        // Table grid
+                        LazyVGrid(columns: columns, spacing: 16) {
+                            ForEach(Array(availableTables.enumerated()), id: \.element) { index, table in
+                                TableCard(
+                                    table: table,
+                                    progress: appState.userProgress.tableScores[table],
+                                    index: index
+                                ) {
+                                    selectedTable = table
+                                    showPractice = true
+                                }
                             }
                         }
-                    }
-                    .padding(.horizontal)
+                        .padding(.horizontal, 20)
 
-                    // Expand range button
-                    if appState.settings.maxTableNumber < 100 {
-                        ExpandRangeButton {
-                            withAnimation(.spring()) {
-                                appState.settings.maxTableNumber = min(appState.settings.maxTableNumber + 10, 100)
-                                appState.settings.save()
+                        // Expand range button
+                        if appState.settings.maxTableNumber < 100 {
+                            ExpandRangeButton {
+                                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                                    appState.settings.maxTableNumber = min(appState.settings.maxTableNumber + 10, 100)
+                                    appState.settings.save()
+                                }
                             }
+                            .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal)
-                    }
                 }
-                .padding(.bottom, 30)
+                .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 60 : 0)
+                .padding(.bottom, 32)
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .navigationDestination(isPresented: $showPractice) {
             if let table = selectedTable {
-                PracticeView(tableNumber: table)
+                PracticeView(tableNumber: table, appState: appState)
             }
         }
     }
@@ -84,34 +83,44 @@ struct TableSelectorView: View {
 // MARK: - Stats Bar
 struct StatsBar: View {
     let progress: UserProgress
+    let appState: AppState
 
     var body: some View {
-        HStack(spacing: 15) {
+        HStack(spacing: 16) {
             StatBadge(
                 icon: "checkmark.circle.fill",
                 value: "\(progress.completedTables.count)",
                 label: "completed",
-                color: Color(hex: "4ECDC4")
+                color: AppPalette.secondary,
+                appState: appState
             )
 
             StatBadge(
                 icon: "percent",
                 value: String(format: "%.0f%%", progress.accuracy),
                 label: "accuracy",
-                color: Color(hex: "FFB347")
+                color: AppPalette.warning,
+                appState: appState
             )
 
             StatBadge(
                 icon: "flame.fill",
                 value: "\(progress.streak)",
                 label: "streak",
-                color: Color(hex: "FF6B9D")
+                color: AppPalette.primary,
+                appState: appState
             )
         }
-        .padding(15)
-        .background(.ultraThinMaterial)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(AppPalette.surface)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(AppPalette.border, lineWidth: 1)
+        )
         .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
     }
 }
 
@@ -120,20 +129,21 @@ struct StatBadge: View {
     let value: String
     let label: String
     let color: Color
+    let appState: AppState
 
     var body: some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.system(size: 20))
+                .font(.system(size: 24, weight: .semibold))
                 .foregroundColor(color)
 
             Text(value)
-                .font(.system(size: 18, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundColor(AppPalette.text)
 
-            Text(NSLocalizedString(label, comment: ""))
-                .font(.system(size: 11, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.8))
+            Text(appState.localizedString(label, comment: ""))
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundColor(AppPalette.textMuted)
         }
         .frame(maxWidth: .infinity)
     }
@@ -143,25 +153,25 @@ struct StatBadge: View {
 struct TableCard: View {
     let table: Int
     let progress: TableScore?
+    let index: Int
     let action: () -> Void
 
+    @EnvironmentObject var appState: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isPressed = false
+    @State private var appear = false
 
-    private var cardColor: [Color] {
-        let colors: [[Color]] = [
-            [Color(hex: "FF6B9D"), Color(hex: "FF8E8E")],
-            [Color(hex: "C371F4"), Color(hex: "A371F7")],
-            [Color(hex: "6E8EFB"), Color(hex: "5E7FEB")],
-            [Color(hex: "4ECDC4"), Color(hex: "44A08D")],
-            [Color(hex: "FFB347"), Color(hex: "FFA07A")],
-            [Color(hex: "98D8C8"), Color(hex: "6BCB77")],
-        ]
-        return colors[table % colors.count]
+    private var cardColor: Color {
+        AppPalette.tableColors[table % AppPalette.tableColors.count]
+    }
+
+    private var animationDelay: Double {
+        Double(index % 12) * 0.04
     }
 
     var body: some View {
         Button(action: {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) {
                 isPressed = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
@@ -169,74 +179,74 @@ struct TableCard: View {
                 action()
             }
         }) {
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 // Table number
                 Text("\(table)")
-                    .font(.system(size: 48, weight: .black, design: .rounded))
+                    .font(.system(size: 52, weight: .black, design: .rounded))
                     .foregroundColor(.white)
 
                 // Multiplication symbol
                 Text("×")
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.9))
 
                 // Progress indicator
                 if let progress = progress {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         if progress.mastered {
                             Image(systemName: "crown.fill")
-                                .font(.system(size: 12))
-                                .foregroundColor(.yellow)
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(AppPalette.warning)
                         }
                         Text("\(Int(progress.accuracy))%")
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
                     }
                 } else {
-                    Text("new")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.8))
+                    Text(appState.localizedString("new", comment: ""))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.95))
                 }
             }
-            .frame(height: 140)
+            .frame(height: 150)
             .frame(maxWidth: .infinity)
-            .background(
-                LinearGradient(
-                    colors: cardColor,
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 20))
-            .shadow(color: cardColor[0].opacity(0.5), radius: isPressed ? 5 : 10, y: isPressed ? 2 : 5)
-            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .background(cardColor)
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.white.opacity(0.3), lineWidth: 2)
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.white.opacity(0.25), lineWidth: 1)
             )
+            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())
+        .scaleEffect(appear ? 1.0 : 0.7)
+        .opacity(appear ? 1.0 : 0)
+        .animation(reduceMotion ? nil : .spring(response: 0.5, dampingFraction: 0.7).delay(animationDelay), value: appear)
+        .onAppear {
+            appear = true
+        }
     }
 }
 
 // MARK: - Expand Range Button
 struct ExpandRangeButton: View {
     let action: () -> Void
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         Button(action: action) {
-            HStack {
+            HStack(spacing: 12) {
                 Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 20))
-                Text("unlock_more_tables")
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundColor(.white)
+                Text(appState.localizedString("unlock_more_tables", comment: ""))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
             }
-            .foregroundColor(.white)
-            .padding(.horizontal, 25)
-            .padding(.vertical, 15)
-            .background(.ultraThinMaterial)
+            .padding(.horizontal, 28)
+            .padding(.vertical, 16)
+            .background(AppPalette.primary)
             .clipShape(Capsule())
-            .shadow(color: .black.opacity(0.1), radius: 10, y: 5)
         }
     }
 }

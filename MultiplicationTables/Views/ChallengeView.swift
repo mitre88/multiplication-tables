@@ -4,15 +4,20 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct ChallengeView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = ChallengeViewModel()
+    @StateObject private var viewModel: ChallengeViewModel
     @Environment(\.dismiss) var dismiss
+
+    init(appState: AppState) {
+        _viewModel = StateObject(wrappedValue: ChallengeViewModel(appState: appState))
+    }
 
     var body: some View {
         ZStack {
-            AnimatedGradientBackground()
+            AppBackground()
 
             if viewModel.isPlaying {
                 ChallengeGameView(viewModel: viewModel)
@@ -31,6 +36,7 @@ struct ChallengeView: View {
                 ChallengeSetupView(
                     selectedTables: $viewModel.selectedTables,
                     difficulty: $viewModel.difficulty,
+                    maxTableNumber: appState.settings.maxTableNumber,
                     onStart: {
                         viewModel.startChallenge()
                     }
@@ -57,6 +63,12 @@ class ChallengeViewModel: ObservableObject {
     @Published var lastCorrect = false
 
     private var timer: Timer?
+    private var answerStartTime: Date?
+    private let appState: AppState
+
+    init(appState: AppState) {
+        self.appState = appState
+    }
 
     func startChallenge() {
         let tables = Array(selectedTables)
@@ -67,6 +79,7 @@ class ChallengeViewModel: ObservableObject {
         showFeedback = false
         isPlaying = true
         showResults = false
+        answerStartTime = Date()
 
         switch difficulty {
         case .easy:
@@ -82,10 +95,25 @@ class ChallengeViewModel: ObservableObject {
 
     func submitAnswer() {
         guard let answer = Int(currentAnswer),
-              let session = session,
               !showFeedback else { return }
 
-        lastCorrect = session.submitAnswer(answer)
+        guard var sessionCopy = session,
+              let currentQ = sessionCopy.currentQuestion else { return }
+
+        lastCorrect = sessionCopy.submitAnswer(answer)
+        session = sessionCopy
+        triggerHaptic(isCorrect: lastCorrect)
+
+        // Record progress for each table in the question
+        let timeSpent = answerStartTime?.timeIntervalSinceNow ?? 0
+        let table = currentQ.multiplier
+        appState.userProgress.recordAnswer(
+            table: table,
+            correct: lastCorrect,
+            timeSpent: abs(timeSpent)
+        )
+        appState.userProgress.save()
+
         if lastCorrect {
             score += 10
         }
@@ -100,6 +128,7 @@ class ChallengeViewModel: ObservableObject {
     private func moveToNext() {
         showFeedback = false
         currentAnswer = ""
+        answerStartTime = Date() // Reset timer for next question
 
         if session?.isComplete == true || timeRemaining <= 0 {
             endChallenge()
@@ -123,13 +152,19 @@ class ChallengeViewModel: ObservableObject {
         isPlaying = false
         showResults = true
     }
+
+    private func triggerHaptic(isCorrect: Bool) {
+        guard appState.settings.hapticEnabled else { return }
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(isCorrect ? .success : .error)
+    }
 }
 
 enum ChallengeDifficulty: String, CaseIterable {
     case easy, normal, hard
 
-    var displayName: String {
-        NSLocalizedString("difficulty_\(rawValue)", comment: "")
+    func displayName(appState: AppState) -> String {
+        appState.localizedString("difficulty_\(rawValue)", comment: "")
     }
 
     var icon: String {
@@ -145,7 +180,9 @@ enum ChallengeDifficulty: String, CaseIterable {
 struct ChallengeSetupView: View {
     @Binding var selectedTables: Set<Int>
     @Binding var difficulty: ChallengeDifficulty
+    let maxTableNumber: Int
     let onStart: () -> Void
+    @EnvironmentObject var appState: AppState
 
     private let columns = [
         GridItem(.flexible()),
@@ -162,13 +199,13 @@ struct ChallengeSetupView: View {
                     Text("🔥")
                         .font(.system(size: 80))
 
-                    Text("challenge_mode")
+                    Text(appState.localizedString("challenge_mode", comment: ""))
                         .font(.system(size: 36, weight: .black, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppPalette.primary)
 
-                    Text("challenge_description")
+                    Text(appState.localizedString("challenge_description", comment: ""))
                         .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(AppPalette.textMuted)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -176,9 +213,9 @@ struct ChallengeSetupView: View {
 
                 // Difficulty selector
                 VStack(alignment: .leading, spacing: 15) {
-                    Text("select_difficulty")
+                    Text(appState.localizedString("select_difficulty", comment: ""))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppPalette.text)
 
                     HStack(spacing: 15) {
                         ForEach(ChallengeDifficulty.allCases, id: \.self) { diff in
@@ -195,12 +232,12 @@ struct ChallengeSetupView: View {
 
                 // Table selector
                 VStack(alignment: .leading, spacing: 15) {
-                    Text("select_tables")
+                    Text(appState.localizedString("select_tables", comment: ""))
                         .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(AppPalette.text)
 
                     LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(0...10, id: \.self) { table in
+                        ForEach(0...maxTableNumber, id: \.self) { table in
                             TableToggle(
                                 table: table,
                                 isSelected: selectedTables.contains(table)
@@ -218,20 +255,13 @@ struct ChallengeSetupView: View {
 
                 // Start button
                 Button(action: onStart) {
-                    Text("start_challenge")
+                    Text(appState.localizedString("start_challenge", comment: ""))
                         .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(selectedTables.isEmpty ? AppPalette.textMuted : .white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 18)
-                        .background(
-                            LinearGradient(
-                                colors: selectedTables.isEmpty ? [Color.gray, Color.gray.opacity(0.8)] : [Color(hex: "FF6B9D"), Color(hex: "FFB347")],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
+                        .background(selectedTables.isEmpty ? AppPalette.border : AppPalette.primary)
                         .clipShape(Capsule())
-                        .shadow(color: .black.opacity(0.2), radius: 10, y: 5)
                 }
                 .disabled(selectedTables.isEmpty)
                 .padding(.horizontal)
@@ -247,28 +277,31 @@ struct DifficultyButton: View {
     let difficulty: ChallengeDifficulty
     let isSelected: Bool
     let action: () -> Void
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 Text(difficulty.icon)
-                    .font(.system(size: 32))
+                    .font(.system(size: 36))
 
-                Text(difficulty.displayName)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)
+                Text(difficulty.displayName(appState: appState))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundColor(isSelected ? AppPalette.text : AppPalette.textMuted)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 15)
+            .padding(.vertical, 18)
             .background(
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(isSelected ? Color.white.opacity(0.3) : Color.white.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 15)
-                            .stroke(Color.white, lineWidth: isSelected ? 3 : 0)
-                    )
+                RoundedRectangle(cornerRadius: 18)
+                    .fill(isSelected ? AppPalette.surface : AppPalette.surfaceAlt)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(isSelected ? AppPalette.primary : AppPalette.border, lineWidth: isSelected ? 2 : 1)
+            )
+            .scaleEffect(isSelected ? 1.02 : 1.0)
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
 
@@ -281,18 +314,20 @@ struct TableToggle: View {
     var body: some View {
         Button(action: action) {
             Text("\(table)")
-                .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
-                .frame(width: 60, height: 60)
+                .font(.system(size: 26, weight: .black, design: .rounded))
+                .foregroundColor(isSelected ? .white : AppPalette.text)
+                .frame(width: 68, height: 68)
                 .background(
                     Circle()
-                        .fill(isSelected ? Color(hex: "4ECDC4") : Color.white.opacity(0.2))
+                        .fill(isSelected ? AppPalette.secondary : AppPalette.surface)
                 )
                 .overlay(
                     Circle()
-                        .stroke(Color.white, lineWidth: isSelected ? 3 : 0)
+                        .stroke(isSelected ? AppPalette.secondary : AppPalette.border, lineWidth: 1)
                 )
+                .scaleEffect(isSelected ? 1.05 : 1.0)
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
     }
 }
 
@@ -301,79 +336,95 @@ struct ChallengeGameView: View {
     @ObservedObject var viewModel: ChallengeViewModel
 
     var body: some View {
-        VStack(spacing: 20) {
-            // Timer and score
-            HStack {
-                // Time
-                HStack(spacing: 8) {
-                    Image(systemName: "clock.fill")
-                        .font(.system(size: 20))
-                    Text(timeString(viewModel.timeRemaining))
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                }
-                .foregroundColor(viewModel.timeRemaining < 10 ? .red : .white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial)
-                .clipShape(Capsule())
+        ScrollView {
+            VStack(spacing: 20) {
+                    HStack {
+                        // Time
+                        HStack(spacing: 10) {
+                            Image(systemName: "clock.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(AppPalette.warning)
+                            Text(timeString(viewModel.timeRemaining))
+                                .font(.system(size: 20, weight: .black, design: .rounded))
+                                .foregroundColor(AppPalette.text)
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                        .background(
+                            Capsule()
+                                .fill(AppPalette.surface)
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(AppPalette.border, lineWidth: 1)
+                        )
 
-                Spacer()
+                        Spacer()
 
-                // Score
-                HStack(spacing: 8) {
-                    Image(systemName: "star.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.yellow)
-                    Text("\(viewModel.score)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(.ultraThinMaterial)
-                .clipShape(Capsule())
-            }
-            .padding(.horizontal)
-            .padding(.top, 20)
-
-            Spacer()
-
-            // Question
-            if let question = viewModel.session?.currentQuestion {
-                VStack(spacing: 20) {
-                    Text(question.questionText)
-                        .font(.system(size: 72, weight: .black, design: .rounded))
-                        .foregroundColor(.white)
-
-                    if viewModel.showFeedback {
-                        Image(systemName: viewModel.lastCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
-                            .font(.system(size: 50))
-                            .foregroundColor(viewModel.lastCorrect ? Color(hex: "4ECDC4") : Color(hex: "FF6B6B"))
-                    } else {
-                        Text("=")
-                            .font(.system(size: 60, weight: .bold))
-                            .foregroundColor(.white)
+                        // Score
+                        HStack(spacing: 10) {
+                            Image(systemName: "star.fill")
+                                .font(.system(size: 20, weight: .semibold))
+                                .foregroundColor(AppPalette.warning)
+                            Text("\(viewModel.score)")
+                                .font(.system(size: 20, weight: .black, design: .rounded))
+                                .foregroundColor(AppPalette.text)
+                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 10)
+                        .background(
+                            Capsule()
+                                .fill(AppPalette.surface)
+                        )
+                        .overlay(
+                            Capsule()
+                                .stroke(AppPalette.border, lineWidth: 1)
+                        )
                     }
-                }
-                .padding(40)
-                .background(
-                    RoundedRectangle(cornerRadius: 30)
-                        .fill(.ultraThinMaterial)
-                )
+                    .padding(.horizontal, 24)
+                    .padding(.top, 10)
+
+                    if let question = viewModel.session?.currentQuestion {
+                        VStack(spacing: 15) {
+                            Text(question.questionText)
+                                .font(.system(size: 64, weight: .black, design: .rounded))
+                                .foregroundColor(AppPalette.text)
+
+                            if viewModel.showFeedback {
+                                Image(systemName: viewModel.lastCorrect ? "checkmark.circle.fill" : "xmark.circle.fill")
+                                    .font(.system(size: 48, weight: .semibold))
+                                    .foregroundColor(viewModel.lastCorrect ? AppPalette.secondary : AppPalette.primary)
+                            } else {
+                                Text("=")
+                                    .font(.system(size: 54, weight: .black, design: .rounded))
+                                    .foregroundColor(AppPalette.text)
+                            }
+                        }
+                        .padding(24)
+                        .background(
+                            RoundedRectangle(cornerRadius: 24)
+                                .fill(AppPalette.surface)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(AppPalette.border, lineWidth: 1)
+                        )
+                        .padding(.vertical, 10)
+                    }
+
+                    // Answer input
+                    AnswerInputView(
+                        answer: $viewModel.currentAnswer,
+                        isEnabled: !viewModel.showFeedback,
+                        onSubmit: {
+                            viewModel.submitAnswer()
+                        }
+                    )
             }
-
-            Spacer()
-
-            // Answer input
-            AnswerInputView(
-                answer: $viewModel.currentAnswer,
-                isEnabled: !viewModel.showFeedback,
-                onSubmit: {
-                    viewModel.submitAnswer()
-                }
-            )
-            .padding(.bottom, 30)
+            .padding(.horizontal, UIDevice.current.userInterfaceIdiom == .pad ? 60 : 0)
+            .padding(.bottom, 40)
         }
+        .scrollIndicators(.hidden)
     }
 
     private func timeString(_ time: TimeInterval) -> String {
@@ -389,6 +440,7 @@ struct ChallengeResultsView: View {
     let totalQuestions: Int
     let onRestart: () -> Void
     let onExit: () -> Void
+    @EnvironmentObject var appState: AppState
 
     @State private var scale: CGFloat = 0.5
 
@@ -409,23 +461,17 @@ struct ChallengeResultsView: View {
                     .font(.system(size: 100))
                     .scaleEffect(scale)
 
-                Text("challenge_complete")
+                Text(appState.localizedString("challenge_complete", comment: ""))
                     .font(.system(size: 36, weight: .black, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(AppPalette.primary)
 
-                Text("final_score")
+                Text(appState.localizedString("final_score", comment: ""))
                     .font(.system(size: 20, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(AppPalette.textMuted)
 
                 Text("\(score)")
                     .font(.system(size: 72, weight: .black, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.white, Color(hex: "FFE66D")],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
+                    .foregroundColor(AppPalette.text)
             }
 
             Spacer()
@@ -434,38 +480,26 @@ struct ChallengeResultsView: View {
                 Button(action: onRestart) {
                     HStack {
                         Image(systemName: "arrow.clockwise")
-                        Text("try_again")
+                        Text(appState.localizedString("try_again", comment: ""))
                     }
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "FF6B9D"), Color(hex: "FFB347")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .background(AppPalette.primary)
                     .clipShape(Capsule())
                 }
 
                 Button(action: onExit) {
                     HStack {
                         Image(systemName: "house.fill")
-                        Text("back_to_menu")
+                        Text(appState.localizedString("back_to_menu", comment: ""))
                     }
                     .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 18)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "6E8EFB"), Color(hex: "A371F7")],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
+                    .background(AppPalette.info)
                     .clipShape(Capsule())
                 }
             }
@@ -481,8 +515,9 @@ struct ChallengeResultsView: View {
 }
 
 #Preview {
-    NavigationStack {
-        ChallengeView()
-            .environmentObject(AppState())
+    let appState = AppState()
+    return NavigationStack {
+        ChallengeView(appState: appState)
+            .environmentObject(appState)
     }
 }

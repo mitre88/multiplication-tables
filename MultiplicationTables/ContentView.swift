@@ -7,6 +7,7 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var appState: AppState
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         ZStack {
@@ -18,7 +19,9 @@ struct ContentView: View {
                     .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.5), value: appState.showSplash)
+        .animation(reduceMotion ? nil : .easeInOut(duration: 0.5), value: appState.showSplash)
+        .environment(\.locale, Locale(identifier: appState.currentLanguage.rawValue))
+        .id(appState.currentLanguage.rawValue)
     }
 }
 
